@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using AutoCommandQueuePickup.Hooks;
-using AutoCommandQueuePickup.Configuration;
 
 namespace AutoCommandQueuePickup.CommandQueue
 {

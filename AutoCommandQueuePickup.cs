@@ -7,14 +7,19 @@ using HarmonyLib;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour.HookGen;
+using Rewired;
 using RoR2;
+using RoR2.Artifacts;
 using RoR2.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.Networking;
+using UnityEngine.UIElements;
 
 namespace AutoCommandQueuePickup;
 
@@ -29,37 +34,27 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     private static readonly FieldInfo GenericPickupController_consumed =
         typeof(GenericPickupController).GetField("consumed",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
+    public ItemDistributor Distributor { get; private set; }
+    public static Config ModConfig { get; private set; }
+    public static Action PluginUnloaded { get; internal set; }
+    public static bool IsLoaded;    
     private bool distributorNeedsUpdate;
 
+    public static bool dontDestroy = false;
     private HookManager hookManager;
-
-    //create public static logger for all classes under namespace
-    public static ManualLogSource log = BepInEx.Logging.Logger.CreateLogSource("AutoCommandQueuePickup - DEBUG");
-
-    public ItemDistributor Distributor { get; private set; }
-
-    public static Config ModConfig { get; private set; }
-
-
-    public static event Action PluginUnloaded;
-    public static bool IsLoaded;
-
-    public static Dictionary<GameObject, ItemTier> commandArtifactsActive = new();
-    public static GameObject commandUIPrefab;
-    public static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
-    public static readonly FieldInfo PickupPickerController_options = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
-
+    public static GameObject CommandUiPrefab;
+    public static readonly FieldInfo CommandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
+    public static readonly FieldInfo PickupPickerControllerOptions = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
+    
     public void OnEnable()
     {
-        // Debug code for local multiplayer testing
-        // On.RoR2.Networking.NetworkManagerSystemSteam.OnClientConnect += (s, u, t) => { };
-        var harmony = new Harmony("dev.symmys.AutoCommandQueuePickup");
-        harmony.PatchAll();
+        Log.Init(Logger);
+        //AutoCommandQueuePickup.CommandDropletFix();
         ModConfig = new Config(this, Logger);
 
         hookManager = new HookManager(this);
         hookManager.RegisterHooks();
+        QueueManager.Enable();
 
         On.RoR2.PlayerCharacterMasterController.OnBodyDeath += (orig, self) =>
         {
@@ -88,84 +83,49 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         ModConfig.bigItemButtonContainer.SettingChanged += (_, __) => FakeReload();
         ModConfig.bigItemButtonScale.SettingChanged += (_, __) => FakeReload();
 
-        commandUIPrefab = (commandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
+        CommandUiPrefab = (CommandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
         IsLoaded = true;
 
         On.RoR2.PickupPickerController.OnDisplayBegin += HandleCommandDisplayBegin;
         On.RoR2.UI.ScoreboardController.Awake += ScoreboardController_Awake;
         On.RoR2.Artifacts.CommandArtifactManager.Init += CommandArtifactManager_Init;
-
-
-        QueueManager.Enable();
+        On.RoR2.Run.Start += (orig, self) =>
+        {
+            orig(self);
+            Storage.InitStorage();
+        };
 
         foreach (var component in FindObjectsOfType<HUD>())
         {
             component.scoreboardPanel.AddComponent<UIManager>();
         }
 
-
-        StartCoroutine(CheckForCommandDrops());
-
-    }
-
-    private IEnumerator CheckForCommandDrops()
-    {
-        while (true)
+        
+        NetworkIdentity.onNetworkIdAssigned += (identity) =>
         {
-            if (commandArtifactsActive.Count > 0)
-            {
-                foreach (var pair in commandArtifactsActive)
-                {
-                    GameObject obj = pair.Key;
-                    ItemTier tier = pair.Value;
-
-                    IEnumerable<(ItemTier, PickupIndex)> queue = QueueManager.PeekAll();
-                    if (queue == null) break;
-                    foreach (var (itemTier, index) in queue)
-                    {
-                        if (itemTier == ItemTier.NoTier) continue;
-                        if (tier == itemTier)
-                        {
-                            AutoCommandQueuePickup.log.LogInfo($"Command Item Spawned: {tier}");
-                            //QueueManager.Pop(tier);
-                            break;
-                        }
-                    }
-                }
-            } else
-            {
-                //GameObject.FindObjectsOfType<GameObject>().Where(go => go.GetComponent<PickupPickerController>() != null).Select(go => go)
-                foreach (GameObject obj in FindObjectsOfType<GameObject>())
-                {
-                    if (obj.name.Contains("CommandCube(Clone)") && !commandArtifactsActive.ContainsKey(obj))
-                    {
-                        commandArtifactsActive.Add(obj, ItemTier.Tier1);
-                        log.LogWarning($"command cube added at : {obj} position: {obj.transform.position}");
-                        break;
-                    }
-                }
-
+            GameObject gameObject = identity.gameObject;
+            if(gameObject.name == "CommandCube(Clone)"){
+                // destroy the command cube only if the queue is empty or if the tier is not in the queue
+                if(!dontDestroy) Destroy(gameObject);
             }
-            yield return new WaitForSeconds(1f);
-        }
+        };
     }
-
     private void CommandArtifactManager_Init(On.RoR2.Artifacts.CommandArtifactManager.orig_Init orig)
     {
         orig();
-        commandUIPrefab = (commandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
+        CommandUiPrefab = (CommandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
     }
 
     private void HandleCommandDisplayBegin(On.RoR2.PickupPickerController.orig_OnDisplayBegin orig, PickupPickerController self, NetworkUIPromptController networkUIPromptController, LocalUser localUser, CameraRigController cameraRigController)
     {
-        if (self.panelPrefab == commandUIPrefab)
+        if (self.panelPrefab == CommandUiPrefab)
         {
             foreach (var (tier, index) in QueueManager.PeekAll())
             {
                 if (self.IsChoiceAvailable(index))
                 {
                     QueueManager.Pop(tier);
-                    PickupPickerController.Option[] options = (PickupPickerController.Option[])AutoCommandQueuePickup.PickupPickerController_options.GetValue(self);
+                    PickupPickerController.Option[] options = (PickupPickerController.Option[])PickupPickerControllerOptions.GetValue(self);
 
                     for (int j = 0; j < options.Length; j++)
                     {
@@ -195,7 +155,6 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public void OnDisable()
     {
         hookManager.UnregisterHooks();
-
         // TODO: Check if this works for non-hooks
         // Cleanup any leftover hooks
         HookEndpointManager.RemoveAllOwnedBy(
@@ -224,6 +183,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
 
     private void UpdateTargetsWrapper(PlayerCharacterMasterController player)
     {
+
         UpdateTargets();
     }
 
@@ -233,6 +193,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         orig(self);
 
         if (!NetworkServer.active) return;
+        CharacterMasterManager.playerCharacterMasters.Add(self.master.netId.Value, self.master);
         var master = self.master;
         if (master) master.onBodyStart += obj => UpdateTargets();
     }
@@ -370,39 +331,10 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         return Distributor;
     }
 
-    public static void OnCollide(Collision collision)
-    {
-        foreach (ContactPoint pt in collision.contacts)
-        {
-            GameObject collidingObject = pt.otherCollider.gameObject;
-            AutoCommandQueuePickup.log.LogWarning(collidingObject);
-        }
-    }
-
     public ItemDistributor GetDistributor(GameObject item, Cause cause)
     {
         PreDistributeItemInternal(cause);
         return GetDistributorInternal(item);
-    }
-
-    [HarmonyPatch(typeof(RoR2.PickupDropletController), "OnCollisionEnter")]
-    class CommandCubeInitializationPatch
-    {
-        static void Postfix(Collision collision)
-        {
-            log.LogWarning($"Command Cube collision detected at {collision}");
-
-            Ray ray = new(collision.transform.position, Vector3.up);
-            // Check if this collision involves a Command Cube droplet
-/*            if (collision.gameObject.name == "CommandCube(Clone)")
-            {
-                GameObject commandCube = collision.gameObject;
-                
-                log.LogWarning($"Command Cube collision detected at {commandCube.transform.position}");
-                // Modify the Command Cube's properties after collision but before full initialization
-                //commandCube.transform.localScale = new Vector3(2f, 2f, 2f);
-            }*/
-        }
     }
 
 }

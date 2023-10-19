@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using AutoCommandQueuePickup.CommandQueue;
 using AutoCommandQueuePickup.ItemDistributors;
-using IL.RoR2.RemoteGameBrowser;
 using RoR2;
 using UnityEngine;
 
@@ -12,7 +10,7 @@ public abstract class ItemDistributor
 {
     public delegate bool TargetFilter(CharacterMaster target);
 
-    public ItemDistributor(AutoCommandQueuePickup plugin)
+    protected ItemDistributor(AutoCommandQueuePickup plugin)
     {
         UpdateTargets();
     }

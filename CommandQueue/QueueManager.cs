@@ -1,10 +1,7 @@
 ﻿using RoR2;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using static RoR2.Console;
 
 namespace AutoCommandQueuePickup
 {

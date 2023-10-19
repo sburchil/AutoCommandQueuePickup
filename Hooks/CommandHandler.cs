@@ -2,17 +2,17 @@ using BepInEx.Logging;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RoR2;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
-using Logger = BepInEx.Logging.Logger;
 using Random = UnityEngine.Random;
 
 namespace AutoCommandQueuePickup.Hooks;
 
 public class CommandHandler : AbstractHookHandler
 {
-    private static ManualLogSource log = Logger.CreateLogSource("ItemDistributor");
-
     public override void RegisterHooks()
     {
         IL.RoR2.Artifacts.CommandArtifactManager.OnDropletHitGroundServer +=
@@ -24,8 +24,7 @@ public class CommandHandler : AbstractHookHandler
     private void IL_CommandArtifactManager_OnDropletHitGroundServer(ILContext il)
     {
         var cursor = new ILCursor(il);
-        GenericPickupController.CreatePickupInfo targetPickupInfo = new();
-        cursor.GotoNext(MoveType.Before,
+        cursor.GotoNext(MoveType.After,
             i => i.MatchLdsfld("RoR2.Artifacts.CommandArtifactManager", "commandCubePrefab"));
 
         var labels = cursor.IncomingLabels;
@@ -37,20 +36,37 @@ public class CommandHandler : AbstractHookHandler
         cursor.EmitDelegate<ModifyCommandCubeSpawnDelegate>(
             (ref GenericPickupController.CreatePickupInfo pickupInfo) =>
             {
-                if (ModConfig.ShouldDistributeCommand(pickupInfo.pickupIndex, Cause.Drop))
+                PickupDef pickupDef = PickupCatalog.GetPickupDef(pickupInfo.pickupIndex);
+                ItemTier itemTier = pickupDef.itemTier;
+                PickupIndex pickupIndex = pickupDef.pickupIndex;
+                IEnumerable<(ItemTier, PickupIndex)> itemQueue = QueueManager.PeekAll();
+                if (!itemQueue.Any() || !QueueManager.PeekForItemTier(itemTier))
                 {
-                    targetPickupInfo = pickupInfo;
-                    pickupInfo.position = GetTargetLocation();
+                    AutoCommandQueuePickup.dontDestroy = true;
+                    if (ModConfig.ShouldDistributeCommand(pickupInfo.pickupIndex, Cause.Drop))
+                    {
+                        pickupInfo.position = GetTargetLocation();
+                    }
+                    else if (TeleporterInteraction.instance &&
+                         TeleporterInteraction.instance.isCharged &&
+                         ModConfig.ShouldDistributeCommand(pickupInfo.pickupIndex, Cause.Teleport))
+                    {
+                        pickupInfo.position = GetTeleporterCommandTargetPosition();
+                    }
                 }
-                else if (TeleporterInteraction.instance &&
-                     TeleporterInteraction.instance.isCharged &&
-                     ModConfig.ShouldDistributeCommand(pickupInfo.pickupIndex, Cause.Teleport))
+                else
                 {
-                    targetPickupInfo = pickupInfo;
-                    pickupInfo.position = GetTeleporterCommandTargetPosition();
+                    AutoCommandQueuePickup.dontDestroy = false;
+                    PickupIndex poppedIndex = QueueManager.Pop(itemTier);
+                    List<PickupIndex> tierList = ItemUtil.GetItemsFromIndex(poppedIndex);
+                    CharacterMaster master = CharacterMasterManager.playerCharacterMasters.First().Value;
+                    if (tierList.Contains(poppedIndex))
+                    {
+                        ItemIndex itemIndex = PickupCatalog.GetPickupDef(poppedIndex).itemIndex;
+                        master.inventory.GiveItem(itemIndex, 1);
+                    }
                 }
             });
-        log.LogWarning($"CommandCube: {targetPickupInfo.position}");
     }
     public override void UnregisterHooks()
     {
