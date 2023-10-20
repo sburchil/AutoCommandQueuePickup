@@ -1,0 +1,11 @@
+{
+    "name": "AutoCommandQueuePickup",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/sburchil/AutoCommandQueuePickup/tree/dev",
+    "description": "Automatically pickups up and item that drops as well as CommandCubes if the command queue has been populated",
+    "dependencies": [
+    	"bbepis-BepInExPack-5.4.1905",
+    	"tristanmcpherson-R2API-4.3.5",
+        "RiskofThunder-HookGenPatcher-1.2.3"
+    ]
+}
