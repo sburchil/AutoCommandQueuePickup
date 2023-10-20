@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AutoCommandQueuePickup.CommandQueue;
 using BepInEx.Configuration;
 using RoR2;
 

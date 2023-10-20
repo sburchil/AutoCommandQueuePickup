@@ -1,4 +1,4 @@
-﻿using RoR2;
+﻿﻿using RoR2;
 using RoR2.UI;
 using System;
 using System.Collections.Generic;
@@ -6,9 +6,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-namespace AutoCommandQueuePickup.CommandQueue
+namespace AutoCommandQueuePickup
 {
-    public class QueueDisplay : MonoBehaviour
+    class QueueDisplay : MonoBehaviour
     {
         public GameObject itemIconPrefab = null;
         public float itemIconPrefabWidth = 64f;
@@ -25,19 +25,19 @@ namespace AutoCommandQueuePickup.CommandQueue
 
         public void Start()
         {
-            iconScale = (rectTransform.rect.height - 10) / itemIconPrefabWidth;
+            iconScale = (rectTransform.rect.height-10) / itemIconPrefabWidth;
             LayoutIcons();
         }
 
         public void LayoutIcon(int index, RectTransform transform)
         {
-            transform.anchoredPosition = new Vector2(index * iconScale * (itemIconPrefabWidth + 5), 5);
+            transform.anchoredPosition = new Vector2(index * iconScale*(itemIconPrefabWidth+5), 5);
             transform.localScale = new Vector3(iconScale, iconScale, 1);
         }
 
         public void LayoutIcons(int first = 0)
         {
-            for (int i = first; i < icons.Count; i++)
+            for(int i = first; i < icons.Count; i++)
             {
                 LayoutIcon(i, icons[i].rectTransform);
             }
@@ -51,9 +51,9 @@ namespace AutoCommandQueuePickup.CommandQueue
             Button button = icon.gameObject.AddComponent<Button>();
             button.onClick.AddListener(delegate
             {
-                for (int i = 0; i < icons.Count; i++)
+                for(int i = 0; i < icons.Count; i++)
                 {
-                    if (icons[i] == icon)
+                    if(icons[i] == icon)
                     {
                         QueueManager.Remove(tier, i);
                         break;
@@ -61,8 +61,7 @@ namespace AutoCommandQueuePickup.CommandQueue
                 }
             });
 
-            button.navigation = new Navigation
-            {
+            button.navigation = new Navigation {
                 mode = Navigation.Mode.None,
             };
             transform.anchorMin = new Vector2(0, 1);
@@ -71,7 +70,7 @@ namespace AutoCommandQueuePickup.CommandQueue
 
             QueueItemBehavior queueItemBehavior = icon.gameObject.AddComponent<QueueItemBehavior>();
             queueItemBehavior.Init(this);
-
+            
             icons.Insert(index, icon);
 
             return icon;
@@ -79,13 +78,13 @@ namespace AutoCommandQueuePickup.CommandQueue
 
         public void AllocateIcons(int count, Action<int, ItemIcon> action = null)
         {
-            for (int i = icons.Count - 1; i >= count; i--)
+            for(int i = icons.Count-1; i >= count; i--)
             {
                 Destroy(icons[i].gameObject);
                 icons.RemoveAt(i);
             }
 
-            for (int i = icons.Count; i < count; i++)
+            for(int i = icons.Count; i < count; i++)
             {
                 ItemIcon icon = AllocateIcon(i);
 
@@ -95,7 +94,7 @@ namespace AutoCommandQueuePickup.CommandQueue
 
         public void DestroyUI()
         {
-            foreach (var icon in icons)
+            foreach(var icon in icons)
             {
                 Destroy(icon.gameObject);
             }
@@ -117,7 +116,7 @@ namespace AutoCommandQueuePickup.CommandQueue
 
         private void UpdateIcons()
         {
-            for (int i = 0; i < icons.Count; i++)
+            for(int i = 0; i < icons.Count; i++)
             {
                 UpdateIcon(i);
             }
@@ -129,7 +128,7 @@ namespace AutoCommandQueuePickup.CommandQueue
                 return;
             if (tier == this.tier)
             {
-                switch (change)
+                switch(change)
                 {
                     case QueueManager.QueueChange.Changed:
                         UpdateIcon(index);
@@ -222,8 +221,8 @@ namespace AutoCommandQueuePickup.CommandQueue
 
             public void OnEndDrag(PointerEventData eventData)
             {
-                if (!m_DraggingIcon) return;
-
+                if (!m_DraggingIcon) return; 
+                
                 Destroy(m_DraggingIcon);
 
                 if (RectTransformUtility.ScreenPointToLocalPointInRectangle(m_Queue.rectTransform, eventData.position, eventData.pressEventCamera, out var localPos))
@@ -239,7 +238,7 @@ namespace AutoCommandQueuePickup.CommandQueue
                     int count = entry.count;
                     if (eventData.button == PointerEventData.InputButton.Right && count > 1)
                         count /= 2;
-
+                    
                     QueueManager.Move(m_Queue.tier, index, newIndex, count);
                 }
                 eventData.Use();
@@ -256,12 +255,12 @@ namespace AutoCommandQueuePickup.CommandQueue
 
             public void OnPointerClick(PointerEventData eventData)
             {
-                if (eventData.button == PointerEventData.InputButton.Right && AutoCommandQueuePickup.ModConfig.rightClickRemovesStack.Value)
+                if (eventData.button == PointerEventData.InputButton.Right && ModConfig.rightClickRemovesStack.Value)
                 {
                     var icons = m_Queue.icons;
-                    for (int i = 0; i < icons.Count; i++)
+                    for(int i = 0; i < icons.Count; i++)
                     {
-                        if (icons[i].gameObject == gameObject)
+                        if(icons[i].gameObject == gameObject)
                         {
                             var entry = m_Queue.queue[i];
                             QueueManager.Remove(m_Queue.tier, i, entry.count);

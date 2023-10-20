@@ -1,32 +1,31 @@
-﻿using AutoCommandQueuePickup.CommandQueue;
-using AutoCommandQueuePickup.Configuration;
+﻿using AutoCommandQueuePickup.Configuration;
 using AutoCommandQueuePickup.Hooks;
 using BepInEx;
-using BepInEx.Logging;
-using HarmonyLib;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour.HookGen;
-using Rewired;
 using RoR2;
-using RoR2.Artifacts;
 using RoR2.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using Path = System.IO.Path;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.Networking;
-using UnityEngine.UIElements;
+
 
 namespace AutoCommandQueuePickup;
 
 [BepInDependency("com.bepis.r2api")]
-[BepInPlugin("dev.symmys.AutoCommandQueuePickup", "AutoCommandQueuePickup", "1.0.0")]
+[BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+[R2API.Utils.NetworkCompatibility(R2API.Utils.CompatibilityLevel.NoNeedForSync, R2API.Utils.VersionStrictness.DifferentModVersionsAreOk)]
 public class AutoCommandQueuePickup : BaseUnityPlugin
 {
+    public const string PluginAuthor = "symmys";
+    public const string PluginName = "AutoCommandQueuePickup";
+    public const string PluginGUID = PluginAuthor + "." + PluginName;
+    public const string PluginVersion = "1.0.0";
     private static readonly MethodInfo GenericPickupController_AttemptGrant =
         typeof(GenericPickupController).GetMethod("AttemptGrant",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -35,27 +34,37 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         typeof(GenericPickupController).GetField("consumed",
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
     public ItemDistributor Distributor { get; private set; }
-    public static Config ModConfig { get; private set; }
-    public static Action PluginUnloaded { get; internal set; }
-    public static bool IsLoaded;    
+    public static Config AutoPickupConfig { get; private set; }
     private bool distributorNeedsUpdate;
+
+    //start init CommandQueue config
+    public static Action PluginUnloaded;
+    public static bool IsLoaded;    
 
     public static bool dontDestroy = false;
     private HookManager hookManager;
-    public static GameObject CommandUiPrefab;
-    public static readonly FieldInfo CommandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
-    public static readonly FieldInfo PickupPickerControllerOptions = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
+    private static readonly FieldInfo CommandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
+    private static readonly FieldInfo PickupPickerControllerOptions = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
+    
+    public static string bepinExPluginPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+    public void Awake(){
+        //CommandQueue config init
+        ModConfig.InitConfig(Config);
+        ModConfig.enabledTabs.SettingChanged += (_, __) => FakeReload();
+        ModConfig.bigItemButtonContainer.SettingChanged += (_, __) => FakeReload();
+        ModConfig.bigItemButtonScale.SettingChanged += (_, __) => FakeReload();
+    }
     
     public void OnEnable()
     {
         Log.Init(Logger);
-        //AutoCommandQueuePickup.CommandDropletFix();
-        ModConfig = new Config(this, Logger);
+        //AutoPickupItem config init
+        AutoPickupConfig = new Config(this, Logger);
 
         hookManager = new HookManager(this);
         hookManager.RegisterHooks();
-        QueueManager.Enable();
-
+        
         On.RoR2.PlayerCharacterMasterController.OnBodyDeath += (orig, self) =>
         {
             orig(self);
@@ -71,36 +80,30 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
 
         On.RoR2.PlayerCharacterMasterController.Awake += OnPlayerAwake;
 
+        //AutoPickupItem config
         PlayerCharacterMasterController.onPlayerAdded += UpdateTargetsWrapper;
         PlayerCharacterMasterController.onPlayerRemoved += UpdateTargetsWrapper;
+        AutoPickupConfig.distributeToDeadPlayers.SettingChanged += (_, _) => UpdateTargets();
+        AutoPickupConfig.distributionMode.SettingChanged += (_, _) =>
+        Distributor = ItemDistributor.GetItemDistributor(AutoPickupConfig.distributionMode.Value, this);
 
-        ModConfig.distributeToDeadPlayers.SettingChanged += (_, _) => UpdateTargets();
-        ModConfig.distributionMode.SettingChanged += (_, _) =>
-        Distributor = ItemDistributor.GetItemDistributor(ModConfig.distributionMode.Value, this);
-
-        //CommandQueue config
-        ModConfig.enabledTabs.SettingChanged += (_, __) => FakeReload();
-        ModConfig.bigItemButtonContainer.SettingChanged += (_, __) => FakeReload();
-        ModConfig.bigItemButtonScale.SettingChanged += (_, __) => FakeReload();
-
-        CommandUiPrefab = (CommandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
+        //CommandQueue config init
         IsLoaded = true;
 
-        On.RoR2.PickupPickerController.OnDisplayBegin += HandleCommandDisplayBegin;
         On.RoR2.UI.ScoreboardController.Awake += ScoreboardController_Awake;
-        On.RoR2.Artifacts.CommandArtifactManager.Init += CommandArtifactManager_Init;
+        QueueManager.Enable();
+        foreach (var component in FindObjectsOfType<HUD>())
+        {
+            component.scoreboardPanel.AddComponent<UIManager>();
+        }
+        //end init CommandQueue config
+       
         On.RoR2.Run.Start += (orig, self) =>
         {
             orig(self);
             Storage.InitStorage();
         };
 
-        foreach (var component in FindObjectsOfType<HUD>())
-        {
-            component.scoreboardPanel.AddComponent<UIManager>();
-        }
-
-        
         NetworkIdentity.onNetworkIdAssigned += (identity) =>
         {
             GameObject gameObject = identity.gameObject;
@@ -110,48 +113,6 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
             }
         };
     }
-    private void CommandArtifactManager_Init(On.RoR2.Artifacts.CommandArtifactManager.orig_Init orig)
-    {
-        orig();
-        CommandUiPrefab = (CommandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
-    }
-
-    private void HandleCommandDisplayBegin(On.RoR2.PickupPickerController.orig_OnDisplayBegin orig, PickupPickerController self, NetworkUIPromptController networkUIPromptController, LocalUser localUser, CameraRigController cameraRigController)
-    {
-        if (self.panelPrefab == CommandUiPrefab)
-        {
-            foreach (var (tier, index) in QueueManager.PeekAll())
-            {
-                if (self.IsChoiceAvailable(index))
-                {
-                    QueueManager.Pop(tier);
-                    PickupPickerController.Option[] options = (PickupPickerController.Option[])PickupPickerControllerOptions.GetValue(self);
-
-                    for (int j = 0; j < options.Length; j++)
-                    {
-                        if (options[j].pickupIndex == index && options[j].available)
-                        {
-                            IEnumerator submitChoiceNextFrame()
-                            {
-                                yield return 0;
-                                self.SubmitChoice(j);
-                            }
-                            self.StartCoroutine(submitChoiceNextFrame());
-                            break;
-                        }
-                    }
-                    return;
-                }
-            }
-        }
-        orig(self, networkUIPromptController, localUser, cameraRigController);
-    }
-    private void ScoreboardController_Awake(On.RoR2.UI.ScoreboardController.orig_Awake orig, ScoreboardController self)
-    {
-        self.gameObject.AddComponent<UIManager>();
-        orig(self);
-    }
-
     public void OnDisable()
     {
         hookManager.UnregisterHooks();
@@ -162,6 +123,11 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
 
         PlayerCharacterMasterController.onPlayerAdded -= UpdateTargetsWrapper;
         PlayerCharacterMasterController.onPlayerRemoved -= UpdateTargetsWrapper;
+    }
+    private void ScoreboardController_Awake(On.RoR2.UI.ScoreboardController.orig_Awake orig, ScoreboardController self)
+    {
+        self.gameObject.AddComponent<UIManager>();
+        orig(self);
     }
 
     private bool isFakeReloading = false;
@@ -284,7 +250,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public void PreDistributeItemInternal(Cause cause)
     {
         if (Distributor == null)
-            Distributor = ItemDistributor.GetItemDistributor(ModConfig.distributionMode.Value, this);
+            Distributor = ItemDistributor.GetItemDistributor(AutoPickupConfig.distributionMode.Value, this);
 
         if (distributorNeedsUpdate)
         {

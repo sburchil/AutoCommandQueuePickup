@@ -1,8 +1,6 @@
 using System;
 using System.Reflection;
-using AutoCommandQueuePickup.CommandQueue;
 using AutoCommandQueuePickup.ItemDistributors;
-using BepInEx.Logging;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using RoR2;

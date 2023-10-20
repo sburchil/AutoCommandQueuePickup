@@ -25,7 +25,12 @@ namespace AutoCommandQueuePickup
         {
             { ItemTier.Tier1, new List<QueueEntry>() },
             { ItemTier.Tier2, new List<QueueEntry>() },
-            { ItemTier.Tier3, new List<QueueEntry>() }
+            { ItemTier.Tier3, new List<QueueEntry>() },
+            { ItemTier.Boss, new List<QueueEntry>() },
+            { ItemTier.Lunar, new List<QueueEntry>() },
+            { ItemTier.VoidTier1, new List<QueueEntry>() },
+            { ItemTier.VoidTier2, new List<QueueEntry>() },
+            { ItemTier.VoidTier3, new List<QueueEntry>() }
         };
 
         public static Dictionary<ItemTier, bool> queueRepeat = new Dictionary<ItemTier, bool>();
@@ -43,7 +48,7 @@ namespace AutoCommandQueuePickup
 
         public static void UpdateQueueAvailability()
         {
-            var enabledTabs = AutoCommandQueuePickup.ModConfig.enabledTabs.Value;
+            var enabledTabs = ModConfig.enabledTabs.Value;
             foreach (var key in mainQueues.Keys.ToArray())
             {
                 if (!enabledTabs.Contains(key))
@@ -204,6 +209,10 @@ namespace AutoCommandQueuePickup
         {
             return mainQueues.Where(entry => entry.Value.Count > 0)
                 .Select(entry => (entry.Key, entry.Value.First().pickupIndex));
+        }
+        public static void ClearAllQueues() {
+            mainQueues.Clear();
+            UpdateQueueAvailability();
         }
 
         public static bool PeekForItemTier(ItemTier tier)

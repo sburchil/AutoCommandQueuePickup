@@ -1,4 +1,4 @@
-﻿using RoR2;
+﻿﻿using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +10,10 @@ using RoR2.UI;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using TMPro;
-using AutoCommandQueuePickup.CommandQueue;
 
 namespace AutoCommandQueuePickup
 {
-    public class UIManager : MonoBehaviour
+    class UIManager : MonoBehaviour
     {
         private static readonly GameObject commandUIPrefab;
         private static readonly GameObject commandCancelButton;
@@ -125,12 +124,12 @@ namespace AutoCommandQueuePickup
         private static void ReparentChildren(Transform dest, Transform source, bool keepWorldPos = false, Action<Transform> additionalAction = null)
         {
             List<Transform> children = new List<Transform>();
-            foreach (Transform child in source)
+            foreach(Transform child in source)
             {
-                if (child != dest)
+                if(child != dest)
                     children.Add(child);
             }
-            foreach (var child in children)
+            foreach(var child in children)
             {
                 child.SetParent(dest, keepWorldPos);
                 additionalAction?.Invoke(child);
@@ -172,7 +171,7 @@ namespace AutoCommandQueuePickup
 
             return wrappedButton;
         }
-
+        
         private static readonly Color selectedColorMult = new Color(0.3f, 0.3f, 0.3f);
 
         private Sprite missingUnlockIcon;
@@ -230,7 +229,7 @@ namespace AutoCommandQueuePickup
             }
             set
             {
-                if (selectedQueue != value)
+                if(selectedQueue != value)
                 {
                     queueDisplays[selectedQueue].SetActive(false);
                     queueDisplays[value].SetActive(true);
@@ -246,7 +245,7 @@ namespace AutoCommandQueuePickup
             button.hgButton.colors = state ? selectedButtonColors : origButtonColors;
             button.hgButton.imageOnHover.color = state ? selectedColorMult : Color.white;
         }
-
+        
         private void TransitionEnabledButton(ButtonWrapper from, ButtonWrapper to)
         {
             MarkButton(from, false);
@@ -260,7 +259,7 @@ namespace AutoCommandQueuePickup
             if (!(queueButton.hgButton && scoreboardButton.hgButton))
                 return;
 
-            if (DisplayingQueues)
+            if(DisplayingQueues)
             {
                 enabledButton = queueButton;
                 disabledButton = scoreboardButton;
@@ -277,12 +276,12 @@ namespace AutoCommandQueuePickup
         private void PrintObject(GameObject obj, bool components = false, int depth = 0)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append(' ', depth * 2);
+            sb.Append(' ', depth*2);
             sb.Append(obj.ToString());
             Debug.Log(sb.ToString());
-            if (components)
+            if(components)
             {
-                foreach (var component in obj.GetComponents<Component>())
+                foreach(var component in obj.GetComponents<Component>())
                 {
                     sb.Clear();
                     sb.Append(' ', depth * 2);
@@ -300,7 +299,7 @@ namespace AutoCommandQueuePickup
         private PickupIndex GetPickupIndexOfItemTier(ItemTier itemTier)
         {
             List<PickupIndex> pickupIndices = null;
-            switch (itemTier)
+            switch(itemTier)
             {
                 case ItemTier.Tier1:
                     pickupIndices = Run.instance.availableTier1DropList;
@@ -342,12 +341,12 @@ namespace AutoCommandQueuePickup
             GameObject gameObject = new GameObject($"{itemTier}QueueContainer", typeof(RectTransform));
             RectTransform transform = gameObject.transform as RectTransform;
             transform.SetParent(parent, false);
-
+            
             GameObject queueDisplay = Instantiate(itemInventoryDisplayPrefab.gameObject, transform, false);
             DestroyImmediate(queueDisplay.GetComponent<ItemInventoryDisplay>());
             DestroyImmediate(queueDisplay.GetComponent<LayoutElement>());
             RectTransform queueTransform = queueDisplay.transform as RectTransform;
-
+            
             queueTransform.anchorMin = new Vector2(0, 1);
             queueTransform.anchorMax = new Vector2(1, 1);
             queueTransform.sizeDelta = new Vector2(-60, 50);
@@ -378,7 +377,7 @@ namespace AutoCommandQueuePickup
             repeatImage.texture = repeatIconTexture;
 
             MarkButton(repeatButton, QueueManager.DoesRepeat(itemTier));
-
+            
             var queueDisplayComponent = queueDisplay.AddComponent<QueueDisplay>();
             queueDisplayComponent.itemIconPrefab = itemIconPrefab;
             queueDisplayComponent.itemIconPrefabWidth = itemInventoryDisplayPrefab.itemIconPrefabWidth;
@@ -389,7 +388,7 @@ namespace AutoCommandQueuePickup
             var gridLayoutGroup = itemButtonsContainer.GetComponent<GridLayoutGroup>();
 
             var buttonAllocator = new UIElementAllocator<MPButton>(itemButtonsTransform, commandItemButton);
-            if (AutoCommandQueuePickup.ModConfig.bigItemButtonContainer.Value)
+            if (ModConfig.bigItemButtonContainer.Value)
             {
                 Destroy(itemButtonsContainer.GetComponent<RawImage>());
                 //PrintObject(gameObject, true);
@@ -397,15 +396,15 @@ namespace AutoCommandQueuePickup
                 gridLayoutGroup.startCorner = GridLayoutGroup.Corner.UpperLeft;
                 gridLayoutGroup.startAxis = GridLayoutGroup.Axis.Horizontal;
                 gridLayoutGroup.childAlignment = TextAnchor.UpperCenter;
-                gridLayoutGroup.cellSize *= AutoCommandQueuePickup.ModConfig.bigItemButtonScale.Value;
-
+                gridLayoutGroup.cellSize *= ModConfig.bigItemButtonScale.Value;
+                
                 //ExecuteNextFrame(delegate
                 //{
-                itemButtonsTransform.anchoredPosition = new Vector2(0, 0); // If somebody can tell me why exactly this doesn't work if done immediately, please tell me
-                itemButtonsTransform.anchorMin = new Vector2(0, 0);
-                itemButtonsTransform.anchorMax = new Vector2(1, 1);
-                itemButtonsTransform.sizeDelta = new Vector2(0, -55);
-                itemButtonsTransform.pivot = new Vector2(0.5f, 0);
+                    itemButtonsTransform.anchoredPosition = new Vector2(0, 0); // If somebody can tell me why exactly this doesn't work if done immediately, please tell me
+                    itemButtonsTransform.anchorMin = new Vector2(0, 0);
+                    itemButtonsTransform.anchorMax = new Vector2(1, 1);
+                    itemButtonsTransform.sizeDelta = new Vector2(0, -55);
+                    itemButtonsTransform.pivot = new Vector2(0.5f, 0);
                 //});
             }
             else
@@ -460,6 +459,41 @@ namespace AutoCommandQueuePickup
             return transform;
         }
 
+        private RectTransform CreateSaveLoadContainer(RectTransform parent) {
+            GameObject gameObject = new GameObject("SaveLoadContainer", typeof(RectTransform));
+            RectTransform transform = gameObject.transform as RectTransform;
+            transform.SetParent(parent, false);
+
+            float saveSlots = 5;
+            for (int i = 1; i <= saveSlots; i++) {
+                int slot = i;
+                float y = (saveSlots + 1 - slot) * 1.2f / saveSlots - 0.6f;
+                
+                ButtonWrapper loadButton = CreateButton(text: $"Load slot {slot} ({ModConfig.PreviewSlot(slot)})", parent: gameObject, onClick: delegate
+                {
+                    ModConfig.LoadQueue(slot);
+                });
+                RectTransform loadButtonTransform = loadButton.rectTransform;
+                loadButtonTransform.anchorMin = new Vector2(0.25f, y);
+                loadButtonTransform.anchorMax = new Vector2(0.495f, y + 0.24f);
+                loadButtonTransform.anchoredPosition = new Vector2();
+                loadButtonTransform.sizeDelta = new Vector2();
+                
+                ButtonWrapper saveButton = CreateButton(text: $"Save in slot {slot}", parent: gameObject, onClick: delegate
+                {
+                    ModConfig.SaveQueue(slot);
+                    loadButton.text = $"Load slot {slot} ({ModConfig.PreviewSlot(slot)})";
+                });
+                RectTransform saveButtonTransform = saveButton.rectTransform;
+                saveButtonTransform.anchorMin = new Vector2(0.505f, y);
+                saveButtonTransform.anchorMax = new Vector2(0.75f, y + 0.24f);
+                saveButtonTransform.anchoredPosition = new Vector2();
+                saveButtonTransform.sizeDelta = new Vector2();
+            }
+
+            return transform;
+        }
+
         private List<GameObject> uiElements = new List<GameObject>();
 
         private void DestroyUI()
@@ -468,7 +502,7 @@ namespace AutoCommandQueuePickup
                 Destroy(element);
             uiElements.Clear();
 
-            if (container != null)
+            if(container != null)
             {
                 RectTransform containerTransform = container.GetComponent<RectTransform>();
                 RectTransform origTransform = origContainer.GetComponent<RectTransform>();
@@ -480,7 +514,7 @@ namespace AutoCommandQueuePickup
                 container = null;
             }
         }
-
+        
         private void RebuildUI()
         {
             DestroyUI();
@@ -511,7 +545,7 @@ namespace AutoCommandQueuePickup
             //containerTransform.anchoredPosition = new Vector2(0, 10);
             containerTransform.anchorMin = new Vector2(0, 0);
             containerTransform.anchorMax = new Vector2(1, 0.9f);
-
+            
             ReparentChildren(containerTransform, origTransform);
             #endregion
             #region Queue container setup 
@@ -524,9 +558,10 @@ namespace AutoCommandQueuePickup
             //(ItemTier, string)[] tiers = { (ItemTier.Tier1, "White"), (ItemTier.Tier2, "Green"), (ItemTier.Tier3, "Red") };
             Dictionary<ItemTier, string> tierNameOverrides = new Dictionary<ItemTier, string> { { ItemTier.Tier1, "White" }, { ItemTier.Tier2, "Green" }, { ItemTier.Tier3, "Red" } };
 
-            var enabledTabs = AutoCommandQueuePickup.ModConfig.enabledTabs.Value;
+            var enabledTabs = ModConfig.enabledTabs.Value;
+            float tabCount = (float)enabledTabs.Count + 1; // +1 for the save/load tab
             int i = 0;
-            foreach (ItemTier tier in enabledTabs)
+            foreach(ItemTier tier in enabledTabs)
             {
                 string name = tierNameOverrides.ContainsKey(tier) ? tierNameOverrides[tier] : tier.ToString();
                 ButtonWrapper button = CreateButton(text: name, parent: queueContainer, onClick: delegate
@@ -534,8 +569,8 @@ namespace AutoCommandQueuePickup
                     SelectedQueue = tier;
                 });
 
-                button.rectTransform.anchorMin = new Vector2(i / (float)enabledTabs.Count, 8f / 9f);
-                button.rectTransform.anchorMax = new Vector2((i + 1) / (float)enabledTabs.Count, 1);
+                button.rectTransform.anchorMin = new Vector2(i / tabCount, 8f/9f);
+                button.rectTransform.anchorMax = new Vector2((i + 1) / tabCount, 1);
                 button.rectTransform.anchoredPosition = new Vector2();
                 button.rectTransform.sizeDelta = new Vector2();
 
@@ -545,7 +580,7 @@ namespace AutoCommandQueuePickup
                 });
 
                 queueDisplay.anchorMin = new Vector2(0, 0);
-                queueDisplay.anchorMax = new Vector2(1, 8f / 9f);
+                queueDisplay.anchorMax = new Vector2(1, 8f/9f);
                 queueDisplay.sizeDelta = new Vector2();
                 queueDisplay.anchoredPosition = new Vector2();
                 queueDisplay.gameObject.SetActive(false);
@@ -554,11 +589,32 @@ namespace AutoCommandQueuePickup
                 queueButtons[tier] = button;
                 i++;
             }
+            
+            //Save/Load tab button
+            ButtonWrapper buttonSL = CreateButton(text: "Saves", parent: queueContainer, onClick: delegate
+            {
+                SelectedQueue = ItemTier.NoTier; //TODO: fix this ?
+            });
 
+            buttonSL.rectTransform.anchorMin = new Vector2(i / tabCount, 8f/9f);
+            buttonSL.rectTransform.anchorMax = new Vector2((i + 1) / tabCount, 1);
+            buttonSL.rectTransform.anchoredPosition = new Vector2();
+            buttonSL.rectTransform.sizeDelta = new Vector2();
+            
+            RectTransform savesTabDisplay = CreateSaveLoadContainer(queueTransform);
+            savesTabDisplay.anchorMin = new Vector2(0, 0);
+            savesTabDisplay.anchorMax = new Vector2(1, 8f/9f);
+            savesTabDisplay.sizeDelta = new Vector2();
+            savesTabDisplay.anchoredPosition = new Vector2();
+            savesTabDisplay.gameObject.SetActive(false);
+            
+            queueDisplays[ItemTier.NoTier] = savesTabDisplay.gameObject; //TODO: fix this ?
+            queueButtons[ItemTier.NoTier] = buttonSL; //TODO: fix this ?
+
+            //Default tab
             selectedQueue = enabledTabs.First();
             queueDisplays[selectedQueue].SetActive(true);
-            ExecuteNextFrame(delegate
-            {
+            ExecuteNextFrame(delegate {
                 MarkButton(queueButtons[selectedQueue], true);
             });
 
@@ -596,7 +652,7 @@ namespace AutoCommandQueuePickup
 
         public void Awake()
         {
-            if (!AutoCommandQueuePickup.IsLoaded)
+            if(!AutoCommandQueuePickup.IsLoaded)
             {
                 Destroy(this);
                 return;
@@ -623,7 +679,7 @@ namespace AutoCommandQueuePickup
         private void OnDestroy()
         {
             DestroyUI();
-            Destroy(repeatIconTexture);
+            UnityEngine.Object.Destroy(repeatIconTexture);
         }
 
         private void OnEnable()

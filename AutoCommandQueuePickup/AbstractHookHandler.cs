@@ -7,7 +7,7 @@ public abstract class AbstractHookHandler
     internal HookManager hookManager;
 
     public AutoCommandQueuePickup Plugin => hookManager.Plugin;
-    public Config ModConfig => AutoCommandQueuePickup.ModConfig;
+    public Config ModConfig => AutoCommandQueuePickup.AutoPickupConfig;
 
     public void Init(HookManager _hookManager)
     {

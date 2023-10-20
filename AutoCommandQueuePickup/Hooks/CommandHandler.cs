@@ -36,9 +36,7 @@ public class CommandHandler : AbstractHookHandler
         cursor.EmitDelegate<ModifyCommandCubeSpawnDelegate>(
             (ref GenericPickupController.CreatePickupInfo pickupInfo) =>
             {
-                PickupDef pickupDef = PickupCatalog.GetPickupDef(pickupInfo.pickupIndex);
-                ItemTier itemTier = pickupDef.itemTier;
-                PickupIndex pickupIndex = pickupDef.pickupIndex;
+                ItemTier itemTier = PickupCatalog.GetPickupDef(pickupInfo.pickupIndex).itemTier;
                 IEnumerable<(ItemTier, PickupIndex)> itemQueue = QueueManager.PeekAll();
                 if (!itemQueue.Any() || !QueueManager.PeekForItemTier(itemTier))
                 {
@@ -58,12 +56,23 @@ public class CommandHandler : AbstractHookHandler
                 {
                     AutoCommandQueuePickup.dontDestroy = false;
                     PickupIndex poppedIndex = QueueManager.Pop(itemTier);
+                    PickupDef poppedDef = PickupCatalog.GetPickupDef(poppedIndex);
                     List<PickupIndex> tierList = ItemUtil.GetItemsFromIndex(poppedIndex);
                     CharacterMaster master = CharacterMasterManager.playerCharacterMasters.First().Value;
                     if (tierList.Contains(poppedIndex))
                     {
                         ItemIndex itemIndex = PickupCatalog.GetPickupDef(poppedIndex).itemIndex;
                         master.inventory.GiveItem(itemIndex, 1);
+                        var networkUser = master.playerCharacterMasterController?.networkUser;
+                        Chat.AddMessage(new Chat.PlayerPickupChatMessage
+                            {
+                                subjectAsNetworkUser = networkUser,
+                                baseToken = "PLAYER_PICKUP",
+                                pickupToken = poppedDef?.nameToken ?? PickupCatalog.invalidPickupToken,
+                                pickupColor = poppedDef?.baseColor ?? Color.black,
+                                pickupQuantity = (uint)master.inventory.GetItemCount(itemIndex)
+                            }.ConstructChatString());
+                        GenericPickupController.SendPickupMessage(master, poppedIndex);
                     }
                 }
             });

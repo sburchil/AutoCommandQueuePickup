@@ -9,7 +9,7 @@
 	
 	<Target Name="EmbedLocal" BeforeTargets="PrepareForBuild">
 		<ItemGroup>
-			<EmbeddedResource Include="repeat-solid.png" />
+			<EmbeddedResource Include="./AutoCommandQueuePickup/repeat-solid.png" />
 		</ItemGroup>
 	</Target>
 	
@@ -20,7 +20,7 @@
       <PackageReference Include="RoR2-BetterAPI" Version="4.0.3" />
       <PackageReference Include="RoR2BepInExPack" Version="1.7.0" />
       <PackageReference Include="ThunderLib.RoR2" Version="0.0.1" />
-	<PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.3.1-r.0" />
+	<PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.4-r.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -32,8 +32,12 @@
             <HintPath>..\libs\com.unity.multiplayer-hlapi.Runtime.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="Facepunch.Steamworks">
-            <HintPath>..\libs\Facepunch.Steamworks.dll</HintPath>
+        <Reference Include="CommandQueue">
+            <HintPath>..\libs\CommandQueue.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ProperSave">
+            <HintPath>$(UserProfile)\libs\ProperSave.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="HGCSharpUtils">

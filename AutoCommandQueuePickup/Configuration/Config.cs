@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using AutoCommandQueuePickup.CommandQueue;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using RoR2;
@@ -35,13 +32,6 @@ public class Config
     public bool Ready => OnDropReady && OnTeleportReady;
     public event Action OnConfigReady;
     public ConfigMigrator migrator;
-
-    //start command queue config 
-
-    public ConfigEntry<ItemTierSet> enabledTabs;
-    public ConfigEntry<bool> bigItemButtonContainer;
-    public ConfigEntry<float> bigItemButtonScale;
-    public ConfigEntry<bool> rightClickRemovesStack;
 
     public Config(AutoCommandQueuePickup plugin, ManualLogSource _logger)
     {
@@ -89,17 +79,6 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
         OnTeleport.OnReady += CheckReadyStatus;
         OnDrop.OnReady += CheckReadyStatus;
         OnConfigReady += DoMigrationIfReady;
-
-        TomlTypeConverter.AddConverter(typeof(ItemTierSet), new TypeConverter
-        {
-            ConvertToObject = (str, type) => ItemTierSet.Deserialize(str),
-            ConvertToString = (obj, type) => obj.ToString()
-        });
-
-        enabledTabs = config.Bind(new ConfigDefinition("CommandQueue", "EnabledQueues"), new ItemTierSet { ItemTier.Tier1, ItemTier.Tier2, ItemTier.Tier3 }, new ConfigDescription($"Which item tiers should have queues?\nValid values: {string.Join(", ", Enum.GetNames(typeof(ItemTier)))}"));
-        bigItemButtonContainer = config.Bind(new ConfigDefinition("CommandQueue", "BigItemSelectionContainer"), true, new ConfigDescription("false: Default command button layout\ntrue: Increase the space for buttons, helps avoid overflow with modded items"));
-        bigItemButtonScale = config.Bind(new ConfigDefinition("CommandQueue", "BigItemSelectionScale"), 1f, new ConfigDescription("Scale applied to item buttons in the menu - decrease it if your buttons don't fit\nApplies only if BigItemSelectionContainer is true"));
-        rightClickRemovesStack = config.Bind(new ConfigDefinition("CommandQueue", "RightClickRemovesStack"), true, new ConfigDescription("Should right-clicking an item in the queue remove the whole stack?"));
 
         DoMigrationIfReady();
     }
@@ -208,33 +187,4 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
             }
         }
     }
-    public class ItemTierSet : SortedSet<ItemTier>
-    {
-        public static string Serialize(ItemTierSet self)
-        {
-            return string.Join(", ", self.Select(x => x.ToString()));
-        }
-        public static ItemTierSet Deserialize(string src)
-        {
-            ItemTierSet self = new ItemTierSet();
-            foreach (var entry in src.Split(',').Select(s => s.Trim()))
-            {
-                if (Enum.TryParse(entry, out ItemTier result))
-                {
-                    self.Add(result);
-                }
-                else if (int.TryParse(entry, out int index))
-                {
-                    self.Add((ItemTier)index);
-                }
-            }
-            return self;
-        }
-
-        public override string ToString()
-        {
-            return Serialize(this);
-        }
-    }
-
 }

@@ -1,9 +1,5 @@
-using AutoCommandQueuePickup.CommandQueue;
 using RoR2;
-using System;
-using TMPro;
 using UnityEngine;
-using UnityEngine.ResourceManagement.Util;
 
 namespace AutoCommandQueuePickup.Hooks;
 
