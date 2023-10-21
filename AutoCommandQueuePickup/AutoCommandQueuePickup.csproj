@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>default</LangVersion>
+        <Version>1.0.0</Version>
+        <Authors>symmys</Authors>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+	
+	<Target Name="EmbedLocal" BeforeTargets="PrepareForBuild">
+		<ItemGroup>
+			<EmbeddedResource Include="repeat-solid.png" />
+		</ItemGroup>
+	</Target>
+	
+    <ItemGroup>
+      <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+      <PackageReference Include="MonoMod" Version="22.7.31.1" />
+      <PackageReference Include="R2API" Version="5.0.5" />
+      <PackageReference Include="ThunderLib.RoR2" Version="0.0.1" />
+      <PackageReference Include="BepInEx.Core" Version="5.4.19" />
+      <PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.4-r.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="ProperSave">
+            <HintPath>
+              ..\Libs\ProperSave.dll
+            </HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <Target Name="AfterBuild" AfterTargets="Build">
+      <Exec Command="echo The output binary is at $(TargetPath)" />
+    </Target>
+</Project>

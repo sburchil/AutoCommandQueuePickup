@@ -13,13 +13,14 @@ using System.Reflection;
 using Path = System.IO.Path;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.IO;
 
-
+[assembly: AssemblyVersion(AutoCommandQueuePickup.AutoCommandQueuePickup.PluginVersion)]
 namespace AutoCommandQueuePickup;
 
 [BepInDependency("com.bepis.r2api")]
+[BepInDependency("com.KingEnderBrine.ProperSave")]
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
-[R2API.Utils.NetworkCompatibility(R2API.Utils.CompatibilityLevel.NoNeedForSync, R2API.Utils.VersionStrictness.DifferentModVersionsAreOk)]
 public class AutoCommandQueuePickup : BaseUnityPlugin
 {
     public const string PluginAuthor = "symmys";
@@ -43,11 +44,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
 
     public static bool dontDestroy = false;
     private HookManager hookManager;
-    private static readonly FieldInfo CommandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
-    private static readonly FieldInfo PickupPickerControllerOptions = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
-    
-    public static string bepinExPluginPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
+    public readonly string LastCommandQueuePath = Path.Combine(Application.persistentDataPath, "ProperSave", "Saves") + "\\" + "LastCommandQueue" + ".csv";
     public void Awake(){
         //CommandQueue config init
         ModConfig.InitConfig(Config);
@@ -55,7 +52,23 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         ModConfig.bigItemButtonContainer.SettingChanged += (_, __) => FakeReload();
         ModConfig.bigItemButtonScale.SettingChanged += (_, __) => FakeReload();
     }
-    
+
+    private void SaveFile_OnGatherSaveData(System.Collections.Generic.Dictionary<string, object> obj)
+        {
+            SaveAndLoad.Save(LastCommandQueuePath);
+        }
+
+        private void Loading_OnLoadingEnded(ProperSave.SaveFile _)
+        {
+            if (File.Exists(LastCommandQueuePath))
+            {
+                SaveAndLoad.Load(LastCommandQueuePath);
+            }
+            else
+            {
+                Logger.LogInfo("CommandQueue save file does not exist!");
+            }
+        }
     public void OnEnable()
     {
         Log.Init(Logger);
@@ -64,7 +77,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
 
         hookManager = new HookManager(this);
         hookManager.RegisterHooks();
-        
+
         On.RoR2.PlayerCharacterMasterController.OnBodyDeath += (orig, self) =>
         {
             orig(self);
@@ -79,6 +92,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         IL.RoR2.PickupDropletController.OnCollisionEnter += ModifyDropletCollision;
 
         On.RoR2.PlayerCharacterMasterController.Awake += OnPlayerAwake;
+        //end init AutoPickupItem config
 
         //AutoPickupItem config
         PlayerCharacterMasterController.onPlayerAdded += UpdateTargetsWrapper;
@@ -95,6 +109,8 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         foreach (var component in FindObjectsOfType<HUD>())
         {
             component.scoreboardPanel.AddComponent<UIManager>();
+            Log.Warning($"Added UIManager to {component.name}");
+
         }
         //end init CommandQueue config
        
@@ -112,21 +128,33 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
                 if(!dontDestroy) Destroy(gameObject);
             }
         };
+        //proper save integration
+        ProperSave.SaveFile.OnGatherSaveData += SaveFile_OnGatherSaveData;
+        ProperSave.Loading.OnLoadingEnded += Loading_OnLoadingEnded;
     }
     public void OnDisable()
     {
         hookManager.UnregisterHooks();
         // TODO: Check if this works for non-hooks
         // Cleanup any leftover hooks
-        HookEndpointManager.RemoveAllOwnedBy(
-            HookEndpointManager.GetOwner(OnDisable));
+        HookEndpointManager.RemoveAllOwnedBy(HookEndpointManager.GetOwner(OnDisable));
 
         PlayerCharacterMasterController.onPlayerAdded -= UpdateTargetsWrapper;
         PlayerCharacterMasterController.onPlayerRemoved -= UpdateTargetsWrapper;
+
+        IsLoaded = false;
+        PluginUnloaded?.Invoke();
+        On.RoR2.UI.ScoreboardController.Awake -= ScoreboardController_Awake;
+        QueueManager.Disable();
+
     }
     private void ScoreboardController_Awake(On.RoR2.UI.ScoreboardController.orig_Awake orig, ScoreboardController self)
     {
-        self.gameObject.AddComponent<UIManager>();
+        foreach(Component component in self.gameObject.GetComponents<Component>()){
+            Log.Warning($"ScoreboardController_Awake {component.name}");
+        }
+        UIManager u = self.gameObject.AddComponent<UIManager>();
+        Log.Warning($"Added UIManager to {u.gameObject.name}");
         orig(self);
     }
 

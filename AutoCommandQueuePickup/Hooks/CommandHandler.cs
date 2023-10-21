@@ -56,24 +56,8 @@ public class CommandHandler : AbstractHookHandler
                 {
                     AutoCommandQueuePickup.dontDestroy = false;
                     PickupIndex poppedIndex = QueueManager.Pop(itemTier);
-                    PickupDef poppedDef = PickupCatalog.GetPickupDef(poppedIndex);
-                    List<PickupIndex> tierList = ItemUtil.GetItemsFromIndex(poppedIndex);
                     CharacterMaster master = CharacterMasterManager.playerCharacterMasters.First().Value;
-                    if (tierList.Contains(poppedIndex))
-                    {
-                        ItemIndex itemIndex = PickupCatalog.GetPickupDef(poppedIndex).itemIndex;
-                        master.inventory.GiveItem(itemIndex, 1);
-                        var networkUser = master.playerCharacterMasterController?.networkUser;
-                        Chat.AddMessage(new Chat.PlayerPickupChatMessage
-                            {
-                                subjectAsNetworkUser = networkUser,
-                                baseToken = "PLAYER_PICKUP",
-                                pickupToken = poppedDef?.nameToken ?? PickupCatalog.invalidPickupToken,
-                                pickupColor = poppedDef?.baseColor ?? Color.black,
-                                pickupQuantity = (uint)master.inventory.GetItemCount(itemIndex)
-                            }.ConstructChatString());
-                        GenericPickupController.SendPickupMessage(master, poppedIndex);
-                    }
+                    AutoCommandQueuePickup.GrantCommandItem(poppedIndex, master);
                 }
             });
     }
