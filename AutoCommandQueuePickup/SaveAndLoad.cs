@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using RoR2;
 
 namespace AutoCommandQueuePickup
 {
@@ -8,39 +9,69 @@ namespace AutoCommandQueuePickup
     {
         public static void Load(string path)
         {
-            string[] rawLines = File.ReadAllLines(path);
-            for (int i = 0; i < rawLines.Length; i++)
+            if (!File.Exists(path)) return;
+
+            string content = File.ReadAllText(path).Trim();
+            if (string.IsNullOrEmpty(content)) return;
+
+            QueueManager.ClearAllQueues();
+            try
             {
-                string[] rawLinesSplit = rawLines[i].Split(',');
-                for (int j = 1; j < rawLinesSplit.Length; j += 2)
+                using (StreamReader sr = new(path))
                 {
-                    QueueManager.mainQueues[(RoR2.ItemTier)i].Add(new QueueManager.QueueEntry
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
                     {
-                        pickupIndex = new RoR2.PickupIndex(Convert.ToInt32(rawLinesSplit[j + 0])),
-                        count = Convert.ToInt32(rawLinesSplit[j + 1])
-                    });
+                        if (line == "") continue;
+                        string[] rawLinesSplit = line.Split(',');
+                        ItemTier currTier = (ItemTier)Enum.Parse(typeof(ItemTier), rawLinesSplit[0]);
+                        bool doesRepeat = Convert.ToBoolean(rawLinesSplit[1]);
+                        QueueManager.SetRepeat(currTier, doesRepeat);
+                        for (int i = 2; i < rawLinesSplit.Length; i++)
+                        {
+                            if (string.IsNullOrEmpty(rawLinesSplit[i])) continue;
+
+                            string[] s = rawLinesSplit[i].Split('*');
+                            for (int j = 0; j < int.Parse(s[1]); j++)
+                            {
+                                QueueManager.Enqueue(new PickupIndex(Convert.ToInt32(s[0])));
+                            }
+                        }
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.Debug(e);
             }
         }
-
         public static void Save(string path)
         {
-            string textToWrite = "";
-            foreach (KeyValuePair<RoR2.ItemTier, List<QueueManager.QueueEntry>> item in QueueManager.mainQueues)
+            try
             {
-                string line = "";
-                line += (int)item.Key;
-                foreach (QueueManager.QueueEntry item1 in item.Value)
+                string textToSave = "";
+                ItemTier[] tiers = (ItemTier[])Enum.GetValues(typeof(ItemTier));
+                foreach (ItemTier tier in tiers)
                 {
-                    line += ',';
-                    line += item1.pickupIndex.value;
-                    line += ',';
-                    line += item1.count;
+                    if (!QueueManager.PeekForItemTier(tier)) continue;
+                    textToSave += tier.ToString() + "," + QueueManager.DoesRepeat(tier).ToString() + ",";
+                    foreach (QueueManager.QueueEntry entry in QueueManager.mainQueues[tier])
+                    {
+                        textToSave += $"{entry.pickupIndex.value}*{entry.count},";
+                    }
+                    textToSave += "\n";
                 }
-                line += "\n";
-                textToWrite += line;
+                if (!File.Exists(path)) File.Create(path).Dispose();
+                using (StreamWriter tw = new StreamWriter(path))
+                {
+                    tw.WriteLine(textToSave);
+                    tw.Dispose();
+                }
             }
-            File.WriteAllText(path, textToWrite);
+            catch (Exception e)
+            {
+                Log.Debug(e);
+            }
         }
     }
 }

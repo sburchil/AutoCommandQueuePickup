@@ -25,12 +25,7 @@ namespace AutoCommandQueuePickup
         {
             { ItemTier.Tier1, new List<QueueEntry>() },
             { ItemTier.Tier2, new List<QueueEntry>() },
-            { ItemTier.Tier3, new List<QueueEntry>() },
-            { ItemTier.Boss, new List<QueueEntry>() },
-            { ItemTier.Lunar, new List<QueueEntry>() },
-            { ItemTier.VoidTier1, new List<QueueEntry>() },
-            { ItemTier.VoidTier2, new List<QueueEntry>() },
-            { ItemTier.VoidTier3, new List<QueueEntry>() }
+            { ItemTier.Tier3, new List<QueueEntry>() }
         };
 
         public static Dictionary<ItemTier, bool> queueRepeat = new Dictionary<ItemTier, bool>();
@@ -47,23 +42,18 @@ namespace AutoCommandQueuePickup
         }
 
         public static void UpdateQueueAvailability()
-        {
-            var enabledTabs = ModConfig.enabledTabs.Value;
-            foreach (var key in mainQueues.Keys.ToArray())
-            {
-                if (!enabledTabs.Contains(key))
-                    mainQueues.Remove(key);
-            }
-            foreach (ItemTier tier in enabledTabs)
+        {        
+            mainQueues.Clear();    
+            object[] tiers = AutoCommandQueuePickup.config.enabledTabsConfig.Where(a => a.Value).Select(a => Enum.Parse(typeof(ItemTier), a.Definition.Key)).ToArray();
+            foreach (ItemTier tier in tiers.Select(v => (ItemTier)v))
             {
                 if (!mainQueues.ContainsKey(tier))
-                    mainQueues.Add(tier, new List<QueueEntry>());
+                    mainQueues.Add(tier, new ());
             }
         }
 
         private static void InitQueues(Run run)
         {
-            mainQueues.Clear();
             UpdateQueueAvailability();
 
             OnRunQueueInit?.Invoke(run);
@@ -211,7 +201,6 @@ namespace AutoCommandQueuePickup
                 .Select(entry => (entry.Key, entry.Value.First().pickupIndex));
         }
         public static void ClearAllQueues() {
-            mainQueues.Clear();
             UpdateQueueAvailability();
         }
 
@@ -219,6 +208,11 @@ namespace AutoCommandQueuePickup
         {
             if (mainQueues.ContainsKey(tier)) return mainQueues[tier].Count > 0;
             return false;
+        }
+
+        public static void SetRepeat(ItemTier tier, bool value)
+        {
+            if(!queueRepeat.ContainsKey(tier)) queueRepeat.Add(tier, value);
         }
     }
 }

@@ -12,6 +12,9 @@
 		<ItemGroup>
 			<EmbeddedResource Include="repeat-solid.png" />
 		</ItemGroup>
+    <ItemGroup>
+			<EmbeddedResource Include="icon.png" />
+		</ItemGroup>
 	</Target>
 	
     <ItemGroup>
@@ -30,9 +33,11 @@
             </HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="RiskOfOptions">
+          <HintPath>
+            ..\Libs\RiskOfOptions.dll
+          </HintPath>
+          <Private>false</Private>
+      </Reference>
     </ItemGroup>
-
-    <Target Name="AfterBuild" AfterTargets="Build">
-      <Exec Command="echo The output binary is at $(TargetPath)" />
-    </Target>
 </Project>

@@ -57,6 +57,10 @@ public class ConfigMigrator
         {new("OnTeleport", "DistributeLunarItems"), (config, value) => MigrateItemTier(config.OnTeleport.TierWhitelist, ItemTier.Lunar, value)},
         {new("OnTeleport", "DistributeBossItems"), (config, value) => MigrateItemTier(config.OnTeleport.TierWhitelist, ItemTier.Boss, value)},
         {new("OnTeleport", "ItemBlacklist"), (config, value) => config.OnTeleport.ItemBlacklistEntry.Value = ItemSet.Deserialize(value)},
+    
+        {new("CommandQueue", "BigItemButtonContainer"), (config, value) => config.bigItemButtonContainer.Value = value == "true"},
+        {new("CommandQueue", "BigItemButtonScale"), (config, value) => config.bigItemButtonScale.Value = float.Parse(value)},
+        {new("CommandQueue", "BightClickRemovesStack"), (config, value) => config.rightClickRemovesStack.Value = value == "true"},
     };
 
     public bool NeedsMigration => migrations.Keys.Any(def => OrphanedEntries.ContainsKey(def));

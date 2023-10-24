@@ -41,7 +41,7 @@ public abstract class ItemDistributor
 
     protected bool IsValidTarget(CharacterMaster master)
     {
-        return AutoCommandQueuePickup.AutoPickupConfig.CheckTarget(master);
+        return AutoCommandQueuePickup.config.CheckTarget(master);
     }
 
     protected bool IsValidTarget(PlayerCharacterMasterController player)

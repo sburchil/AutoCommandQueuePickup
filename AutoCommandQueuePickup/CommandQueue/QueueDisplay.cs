@@ -255,7 +255,7 @@ namespace AutoCommandQueuePickup
 
             public void OnPointerClick(PointerEventData eventData)
             {
-                if (eventData.button == PointerEventData.InputButton.Right && ModConfig.rightClickRemovesStack.Value)
+                if (eventData.button == PointerEventData.InputButton.Right && AutoCommandQueuePickup.config.rightClickRemovesStack.Value)
                 {
                     var icons = m_Queue.icons;
                     for(int i = 0; i < icons.Count; i++)
