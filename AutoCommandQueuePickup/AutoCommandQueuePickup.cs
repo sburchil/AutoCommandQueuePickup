@@ -29,7 +29,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public const string PluginAuthor = "symmys";
     public const string PluginName = "AutoCommandQueuePickup";
     public const string PluginGUID = PluginAuthor + "." + PluginName;
-    public const string PluginVersion = "1.0.0";
+    public const string PluginVersion = "1.0.2";
     private static readonly MethodInfo GenericPickupController_AttemptGrant =
         typeof(GenericPickupController).GetMethod("AttemptGrant",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -44,12 +44,11 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     //start init CommandQueue config
     public static Action PluginUnloaded;
     public static bool IsLoaded;    
-
     public static bool dontDestroy = false;
     private HookManager hookManager;
     public readonly string LastCommandQueuePath = Path.Combine(Application.persistentDataPath, "ProperSave", "Saves") + "\\" + "LastCommandQueue" + ".csv";
     private static GameObject commandUIPrefab;
-    private static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
+    public static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
     private static readonly FieldInfo PickupPickerController_options = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private void Awake(){
@@ -79,7 +78,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         hookManager = new HookManager(this);
         hookManager.RegisterHooks();
         commandUIPrefab = (commandCubePrefabField.GetValue(null) as GameObject)?.GetComponent<PickupPickerController>().panelPrefab;
-
+        
         On.RoR2.PlayerCharacterMasterController.OnBodyDeath += (orig, self) =>
         {
             orig(self);
@@ -115,19 +114,10 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
             component.scoreboardPanel.AddComponent<UIManager>();
         }
         //end init CommandQueue config
-        NetworkIdentity.onNetworkIdAssigned += (identity) =>
-        {
-            GameObject gameObject = identity.gameObject;
-            if(gameObject.name == "CommandCube(Clone)"){
-                // destroy the command cube only if the queue is empty or if the tier is not in the queue
-                if(!dontDestroy) Destroy(gameObject);
-            }
-        };
         //proper save integration
         ProperSave.SaveFile.OnGatherSaveData += SaveFile_OnGatherSaveData;
         ProperSave.Loading.OnLoadingEnded += Loading_OnLoadingEnded;
     }
-
     public void OnDisable()
     {
         CharacterMasterManager.playerCharacterMasters.Clear();
@@ -142,7 +132,6 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         PluginUnloaded?.Invoke();
         On.RoR2.UI.ScoreboardController.Awake -= ScoreboardController_Awake;
         QueueManager.Disable();
-
     }
     private void CommandArtifactManager_Init(On.RoR2.Artifacts.CommandArtifactManager.orig_Init orig)
     {
@@ -262,7 +251,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         }
     }
 
-    public static void GrantCommandItem(PickupIndex pickupIndex, CharacterMaster master)
+    public static bool GrantCommandItem(PickupIndex pickupIndex, CharacterMaster master)
     {
         var itemIndex = PickupCatalog.GetPickupDef(pickupIndex)?.itemIndex ?? ItemIndex.None;
         if (itemIndex != ItemIndex.None)
@@ -270,9 +259,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
             master.inventory.GiveItem(itemIndex);
 
             var playerCharacterMasterController = master.playerCharacterMasterController;
-            var networkUser = playerCharacterMasterController != null
-                ? playerCharacterMasterController.networkUser
-                : null;
+            var networkUser = playerCharacterMasterController?.networkUser;
             var pickupDef = PickupCatalog.GetPickupDef(pickupIndex);
             // Based on RoR2.GenericPickupController.HandlePickupMessage
             Chat.AddMessage(new Chat.PlayerPickupChatMessage
@@ -283,7 +270,10 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
                 pickupColor = pickupDef?.baseColor ?? Color.black,
                 pickupQuantity = (uint)master.inventory.GetItemCount(itemIndex)
             }.ConstructChatString());
+
+            return true;
         }
+        return false;
     }
     private void UpdateTargets()
     {
@@ -347,4 +337,3 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     }
 
 }
-

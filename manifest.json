@@ -1,25 +1,11 @@
 {
-    "manifestVersion": 1,
-    "name": "symmys-AutoCommandQueuePickup",
-    "authorName": "symmys",
-    "websiteUrl": "https://github.com/sburchil/AutoCommandQueuePickup/tree/dev",
-    "displayName": "AutoCommandQueuePickup",
+    "name": "AutoCommandQueuePickup",
+    "version_number": "1.0.1",
+    "website_url": "https://github.com/sburchil/AutoCommandQueuePickup",
     "description": "Automatically pickups up items that drop as well as CommandCubes if the command queue has been populated (Plus ProperSave Integration!)",
-    "gameVersion": "",
-    "networkMode": "",
-    "packageType": "",
-    "installMode": "",
-    "loaders": [],
     "dependencies": [
-        "bbepis-BepInExPack-5.4.1905",
-    	"tristanmcpherson-R2API-4.3.5",
-        "RiskofThunder-HookGenPatcher-1.2.3",
-        "KingEnderBrine-ProperSave-2.8.11"
-    ],
-    "incompatibilities": [],
-    "optionalDependencies": [],
-    "versionNumber": { "major": 1, "minor": 0, "patch": 0 },
-    "enabled": true,
-    "icon": ""
-  }
-  
+        "KingEnderBrine-ProperSave-2.8.11",
+        "Rune580-Risk_Of_Options-2.7.1",
+        "tristanmcpherson-R2API-5.0.5"
+    ]
+}

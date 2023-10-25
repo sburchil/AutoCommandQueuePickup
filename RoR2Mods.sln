@@ -5,6 +5,12 @@ VisualStudioVersion = 17.7.34202.233
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoCommandQueuePickup", "AutoCommandQueuePickup\AutoCommandQueuePickup.csproj", "{70CF3F79-167D-40C3-A489-16E1E1D902C1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{B3FF5EFE-09AE-441B-AF20-F43C575F3BFF}"
+	ProjectSection(SolutionItems) = preProject
+		AutoCommandQueuePickup\Libs\ProperSave.dll = AutoCommandQueuePickup\Libs\ProperSave.dll
+		AutoCommandQueuePickup\Libs\RiskOfOptions.dll = AutoCommandQueuePickup\Libs\RiskOfOptions.dll
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
