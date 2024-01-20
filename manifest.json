@@ -1,6 +1,6 @@
 {
     "name": "AutoCommandQueuePickup",
-    "version_number": "1.0.2",
+    "version_number": "1.0.3",
     "website_url": "https://github.com/sburchil/AutoCommandQueuePickup",
     "description": "Automatically pickups up items that drop as well as CommandCubes if the command queue has been populated (Plus ProperSave Integration!)",
     "dependencies": [
