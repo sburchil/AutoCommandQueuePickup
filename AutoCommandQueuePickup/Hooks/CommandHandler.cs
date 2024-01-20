@@ -1,3 +1,4 @@
+using R2API.Utils;
 using RoR2;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +50,7 @@ public class CommandHandler : AbstractHookHandler
             gameObject.GetComponent<PickupIndexNetworker>().NetworkpickupIndex = pickupIndex;
             gameObject.GetComponent<PickupPickerController>().SetOptionsFromPickupForCommandArtifact(pickupIndex);
             PickupIndex poppedIndex = QueueManager.Pop(itemTier);
-            CharacterMaster master = CharacterMasterManager.playerCharacterMasters.First().Value;
+            CharacterMaster master = LocalUserManager.GetFirstLocalUser().cachedMaster;
             AutoCommandQueuePickup.GrantCommandItem(poppedIndex, master);
             GameObject.Destroy(gameObject);
             pickupInfo = new GenericPickupController.CreatePickupInfo();

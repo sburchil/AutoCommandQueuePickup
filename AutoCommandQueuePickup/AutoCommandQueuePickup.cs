@@ -14,6 +14,7 @@ using Path = System.IO.Path;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
+using BepInEx.Configuration;
 
 [assembly: AssemblyVersion(AutoCommandQueuePickup.AutoCommandQueuePickup.PluginVersion)]
 namespace AutoCommandQueuePickup;
@@ -29,7 +30,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public const string PluginAuthor = "symmys";
     public const string PluginName = "AutoCommandQueuePickup";
     public const string PluginGUID = PluginAuthor + "." + PluginName;
-    public const string PluginVersion = "1.0.2";
+    public const string PluginVersion = "1.0.3";
     private static readonly MethodInfo GenericPickupController_AttemptGrant =
         typeof(GenericPickupController).GetMethod("AttemptGrant",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -89,7 +90,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
             orig(self);
             UpdateTargets();
         };
-
+        
         IL.RoR2.PickupDropletController.OnCollisionEnter += ModifyDropletCollision;
 
         On.RoR2.PlayerCharacterMasterController.Awake += OnPlayerAwake;
@@ -257,7 +258,6 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         if (itemIndex != ItemIndex.None)
         {
             master.inventory.GiveItem(itemIndex);
-
             var playerCharacterMasterController = master.playerCharacterMasterController;
             var networkUser = playerCharacterMasterController?.networkUser;
             var pickupDef = PickupCatalog.GetPickupDef(pickupIndex);
