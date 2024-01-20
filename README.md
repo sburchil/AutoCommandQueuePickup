@@ -15,3 +15,8 @@ Also will grant CommandQueue items to player on drop if the CommandQueue for the
 ## Installation
 
 Copy the `AutoCommandQueuePickup` folder to `Risk of Rain 2/BepInEx/plugins`
+
+## Mod Authors
+Please support the original author - **KubeRoot** - of which I simply refactored and combined both:
+- CommandQueue
+- AutoItemPickup
