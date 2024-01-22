@@ -2,7 +2,7 @@
     "name": "AutoCommandQueuePickup",
     "version_number": "1.1.0",
     "website_url": "https://github.com/sburchil/AutoCommandQueuePickup",
-    "description": "Automatically pickups up items that drop as well as CommandCubes if the command queue has been populated (Plus ProperSave Integration!)",
+    "description": "Automatically pickups items that drop as well as CommandCubes if the command queue has been populated (Plus ProperSave Integration!)",
     "dependencies": [
         "KingEnderBrine-ProperSave-2.8.11",
         "Rune580-Risk_Of_Options-2.7.1",
