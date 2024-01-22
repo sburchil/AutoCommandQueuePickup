@@ -20,3 +20,7 @@ Copy the `AutoCommandQueuePickup` folder to `Risk of Rain 2/BepInEx/plugins`
 Please support the original author - **KubeRoot** - of which I simply refactored and combined both:
 - CommandQueue
 - AutoItemPickup
+
+## TODO Features:
+- UI to populate CommandQueue pre-run
+- Add functionality and config to pause the game when editing CommandQueue mid-run
