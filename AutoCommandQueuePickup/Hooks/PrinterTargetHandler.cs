@@ -18,7 +18,7 @@ public class PrinterTargetHandler : AbstractHookHandler
     private void On_ShopTerminalBehavior_DropPickup(On.RoR2.ShopTerminalBehavior.orig_DropPickup orig,
         ShopTerminalBehavior self)
     {
-        if (ModConfig.printerOverrideTarget.Value)
+        if (ModConfig.overridePrinter.Value)
         {
             var interaction = self.GetComponent<PurchaseInteraction>();
 

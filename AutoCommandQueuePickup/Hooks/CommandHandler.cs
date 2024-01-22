@@ -23,6 +23,7 @@ public class CommandHandler : AbstractHookHandler
         PickupDef pickupDef = PickupCatalog.GetPickupDef(pickupIndex);
         if (pickupDef == null || pickupDef.itemIndex == ItemIndex.None && pickupDef.equipmentIndex == EquipmentIndex.None && pickupDef.itemTier == ItemTier.NoTier)
         {
+            orig(ref pickupInfo, ref shouldSpawn);
             return;
         }
         shouldSpawn = false;
@@ -90,7 +91,7 @@ public class CommandHandler : AbstractHookHandler
     }
     private void OnTeleporterCharged(TeleporterInteraction obj)
     {
-        if (!NetworkServer.active || !ModConfig.teleportCommandOnTeleport.Value) return;
+        if (!NetworkServer.active || !ModConfig.timeOfDistribution.Value.Equals(Distribution.OnTeleport)) return;
 
         var originalPickups = InstanceTracker.GetInstancesList<PickupPickerController>();
 

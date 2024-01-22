@@ -43,7 +43,7 @@ public class ScrapperTargetHandler : AbstractHookHandler
         cursor.Emit(OpCodes.Ldfld, Field_ScrapperController_interactor);
         cursor.EmitDelegate<Action<Interactor>>(interactor =>
         {
-            if (ModConfig.scrapperOverrideTarget.Value)
+            if (ModConfig.overrideScrapper.Value)
             {
                 var body = interactor.GetComponent<CharacterBody>();
                 var target = body.master;

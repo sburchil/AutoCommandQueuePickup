@@ -5,8 +5,6 @@ using System.Linq;
 using System.Reflection;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using Mono.Cecil.Cil;
-using Rewired.Utils;
 using RiskOfOptions;
 using RiskOfOptions.OptionConfigs;
 using RiskOfOptions.Options;
@@ -22,14 +20,7 @@ public class Config
 
     public ConfigFile config => Plugin.Config;
     public ConfigEntry<Mode> distributionMode;
-    public ConfigEntry<bool> printerOverrideTarget;
-    public ConfigEntry<bool> scrapperOverrideTarget;
-    public ConfigEntry<bool> teleportCommandObeyTier;
-    public ConfigEntry<bool> distributeToDeadPlayers;
-    public ConfigEntry<bool> distributeOnDrop;
-    public ConfigEntry<bool> distributeOnTeleport;
-    public ConfigEntry<bool> teleportCommandOnDrop;
-    public ConfigEntry<bool> teleportCommandOnTeleport;
+    public ConfigEntry<Distribution> timeOfDistribution;
 
     public ItemFilter OnDrop;
     public ItemFilter OnTeleport;
@@ -38,6 +29,9 @@ public class Config
     private bool OnTeleportReady => OnTeleport?.Ready ?? false;
     public bool Ready => OnDropReady && OnTeleportReady;
     public event Action OnConfigReady;
+
+    public ConfigEntry<bool> overrideScrapper;
+    public ConfigEntry<bool> overridePrinter;
 
     //command queue config
     public ConfigEntry<string> enabledTabs;
@@ -60,37 +54,22 @@ public class Config
         OnTeleport = new ItemFilter("OnTeleportFilter", config);
         OnDrop = new ItemFilter("OnDropFilter", config);
 
-        distributeToDeadPlayers = config.Bind("General", "DistributeToDeadPlayers", true,
-            "Should items be distributed to dead players?");
-        printerOverrideTarget = config.Bind("General", "OverridePrinterTarget", true,
-            "Should items from printers and cauldrons be distributed only to activator as long as they're a valid target?");
-        scrapperOverrideTarget = config.Bind("General", "OverrideScrapperTarget", true,
-            "Should scrap from scrappers be distributed only to activator as long as they're a valid target?");
-
-        distributionMode = config.Bind("General", "DistributionMode", Mode.Sequential,
+        distributionMode = config.Bind("AutoItemPickup", "DistributionMode", Mode.Sequential,
             @"Decide how to distribute items among the players
-Sequential - Goes over all players, giving each of them one item
-Random - Chooses which player receives the item randomly
-Closest - Gives the item to the nearest player
-LeastItems - Gives the item to the player with least total items of the item's tier");
+            Sequential - Goes over all players, giving each of them one item
+            Random - Chooses which player receives the item randomly
+            Closest - Gives the item to the nearest player
+            LeastItems - Gives the item to the player with least total items of the item's tier");
 
-        distributeOnDrop = config.Bind("Items", "DistributeOnDrop", false,
-            "Should items be distributed when they drop?");
-        distributeOnTeleport = config.Bind("Items", "DistributeOnTeleport", true,
-            "Should items be distributed when the teleporter is activated?");
+        timeOfDistribution = config.Bind("AutoItemPickup", "TimeOfDistribution", Distribution.OnDrop,
+            @"When should items be distributed?
+            OnTeleport - When the teleporter is charged
+            OnDrop - Immediately when the item drops");
 
-        teleportCommandOnDrop = config.Bind("Command", "DistributeOnDrop", true,
-            @"Should Command essences be teleported to players?
-If enabled, when an essence is spawned, it will teleport to a player using distribution mode rules. It will not be opened automatically.
-Note: Doesn't work well with LeastItems, due to LeastItems only accounting for the current number of items and not including any unopened command essences.");
-        teleportCommandOnTeleport = config.Bind("Command", "DistributeOnTeleport", true,
-            @"Should Command essences be teleported to the teleporter when charged?
-If enabled, when the teleporter is charged, all essences are teleported nearby the teleporter.
-Afterwards, any new essences that do not fit the requirements for OnDrop distribution will also be teleported nearby the teleporter.");
-        teleportCommandObeyTier = config.Bind("Command", "UseTierWhitelist", true,
-            @"Should Command essence teleportation be restricted by item tiers?
-If enabled, when deciding if a command essence should be teleported, its tier will be compared against the OnDrop/OnTeleport tier whitelist.");
-        enabledTabs = config.Bind(new ConfigDefinition("CommandQueue", "EnabledQueues"), "Tier1,Tier2,Tier3,Lunar,Boss,VoidTier1,VoidTier2,VoidTier3,VoidBoss", new ConfigDescription($"Which item tiers should have queues?\nValid values: {string.Join(", ", Enum.GetNames(typeof(ItemTier)))}"));
+        overrideScrapper = config.Bind("AutoItemPickup", "OverrideScrapper", true, "Should items dropped by scrappers be distributed?");
+        overridePrinter = config.Bind("AutoItemPickup", "OverridePrinter", true, "Should items dropped by 3D printers be distributed?");
+
+       // enabledTabs = config.Bind(new ConfigDefinition("CommandQueue", "EnabledQueues"), "Tier1,Tier2,Tier3,Lunar,Boss,VoidTier1,VoidTier2,VoidTier3,VoidBoss", new ConfigDescription($"Which item tiers should have queues?\nValid values: {string.Join(", ", Enum.GetNames(typeof(ItemTier)))}"));
         ItemTier[] itemTiers = (ItemTier[])Enum.GetValues(typeof(ItemTier));
         foreach(ItemTier tier in itemTiers){
             ConfigEntry<bool> entry = config.Bind("CommandQueue", $"{tier}", true, new ConfigDescription($"Should {tier} items be queued?"));
@@ -100,6 +79,11 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
         bigItemButtonContainer = config.Bind(new ConfigDefinition("UI", "BigItemSelectionContainer"), true, new ConfigDescription("false: Default command button layout\ntrue: Increase the space for buttons, helps avoid overflow with modded items"));
         bigItemButtonScale = config.Bind(new ConfigDefinition("UI", "BigItemSelectionScale"), 1f, new ConfigDescription("Scale applied to item buttons in the menu - decrease it if your buttons don't fit\nApplies only if BigItemSelectionContainer is true"));
         rightClickRemovesStack = config.Bind(new ConfigDefinition("UI", "RightClickRemovesStack"), true, new ConfigDescription("Should right-clicking an item in the queue remove the whole stack?"));
+
+        overridePrinter.SettingChanged += UpdateSettings;
+        overrideScrapper.SettingChanged += UpdateSettings;
+        distributionMode.SettingChanged += UpdateSettings;
+        timeOfDistribution.SettingChanged += UpdateSettings;
 
         bigItemButtonContainer.SettingChanged += UpdateSettings;
         bigItemButtonScale.SettingChanged += UpdateSettings;
@@ -136,6 +120,10 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
     {
         ModSettingsManager.SetModDescription("Automatically pickups up items that drop as well as CommandCubes if the command queue has been populated (Plus ProperSave Integration!)");
         ModSettingsManager.SetModIcon(Sprite.Create(ModIcon, new Rect(0, 0, ModIcon.width, ModIcon.height), new Vector2(0.5f, 0.5f)));
+        ModSettingsManager.AddOption(new ChoiceOption(distributionMode));
+        ModSettingsManager.AddOption(new ChoiceOption(timeOfDistribution));
+        ModSettingsManager.AddOption(new CheckBoxOption(overrideScrapper));
+        ModSettingsManager.AddOption(new CheckBoxOption(overridePrinter));
         //ModSettingsManager.AddOption(new StringInputFieldOption(enabledTabs));
         foreach(ConfigEntry<bool> entry in enabledTabsConfig){
             ModSettingsManager.AddOption(new CheckBoxOption(entry));
@@ -163,15 +151,15 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
 
     public bool CheckTarget(CharacterMaster master)
     {
-        return master != null && (master.hasBody || distributeToDeadPlayers.Value);
+        return master != null && master.hasBody;
     }
 
     public bool ShouldDistribute(PickupIndex index, Cause cause)
     {
-        var distributeWrapper = cause == Cause.Drop ? distributeOnDrop : distributeOnTeleport;
+        // var distributeWrapper = cause == Cause.Drop ? Distribution.OnDrop : Distribution.OnTeleport;
 
-        if (!distributeWrapper.Value)
-            return false;
+        // if (!distributeWrapper.Value)
+        //     return false;
 
         var pickupDef = PickupCatalog.GetPickupDef(index);
 
@@ -187,21 +175,6 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
 
         return filter.CheckFilter(itemDef.itemIndex);
     }
-    public bool ShouldDistributeCommand(ItemTier tier, Cause cause)
-    {
-        var teleportWrapper = cause == Cause.Drop ? teleportCommandOnDrop : teleportCommandOnTeleport;
-
-        if (!teleportWrapper.Value)
-            return false;
-
-        if (!teleportCommandObeyTier.Value)
-            return true;
-
-        var filter = cause == Cause.Drop ? OnDrop : OnTeleport;
-
-        return filter.CheckFilterTier(tier);
-    }
-
     //Exact order:
     //Check config if teleportation is enabled at all. If not, don't distribute.
     //Check if PickupIndex refers to a valid pickup, and if that pickup has an ItemIndex. If not, don't distribute.
@@ -210,18 +183,15 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
     //If we get to this point, rely on the correct ItemFilter to decide if we should distribute.
     public bool ShouldDistributeCommand(PickupIndex index, Cause cause)
     {
-        var teleportWrapper = cause == Cause.Drop ? teleportCommandOnDrop : teleportCommandOnTeleport;
+        // var teleportWrapper = cause == Cause.Drop ? teleportCommandOnDrop : teleportCommandOnTeleport;
 
-        if (!teleportWrapper.Value)
-            return false;
+        // if (!teleportWrapper.Value)
+        //     return false;
 
         var pickupDef = PickupCatalog.GetPickupDef(index);
 
         if (pickupDef == null || pickupDef.itemIndex == ItemIndex.None)
             return false;
-
-        if (!teleportCommandObeyTier.Value)
-            return true;
 
         var itemDef = ItemCatalog.GetItemDef(pickupDef.itemIndex);
 
@@ -291,6 +261,14 @@ If enabled, when deciding if a command essence should be teleported, its tier wi
                 bigItemButtonScale.Value = Convert.ToSingle(args.ChangedSetting.BoxedValue);
             } else if (args.ChangedSetting.Definition.Key == "RightClickRemovesStack"){
                 rightClickRemovesStack.Value = Convert.ToBoolean(args.ChangedSetting.BoxedValue);
+            } else if(args.ChangedSetting.Definition.Key == "OverridePrinter"){
+                overridePrinter.Value = Convert.ToBoolean(args.ChangedSetting.BoxedValue);
+            } else if(args.ChangedSetting.Definition.Key == "OverrideScrapper"){
+                overrideScrapper.Value = Convert.ToBoolean(args.ChangedSetting.BoxedValue);
+            } else if(args.ChangedSetting.Definition.Key == "DistributionMode"){
+                distributionMode.Value = (Mode)Enum.Parse(typeof(Mode), args.ChangedSetting.BoxedValue.ToString());
+            } else if(args.ChangedSetting.Definition.Key == "TimeOfDistribution"){
+                timeOfDistribution.Value = (Distribution)Enum.Parse(typeof(Distribution), args.ChangedSetting.BoxedValue.ToString());
             }
         }
         QueueManager.UpdateQueueAvailability();

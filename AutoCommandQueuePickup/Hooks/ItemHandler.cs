@@ -20,7 +20,7 @@ public class ItemHandler : AbstractHookHandler
     private void On_GenericPickupController_Start(On.RoR2.GenericPickupController.orig_Start orig,
         RoR2.GenericPickupController self)
     {
-        if (NetworkServer.active && ModConfig.distributeOnDrop.Value)
+        if (NetworkServer.active && ModConfig.timeOfDistribution.Value.Equals(Distribution.OnDrop))
             if (ModConfig.ShouldDistribute(self.pickupIndex, Cause.Drop))
                 Plugin.DistributeItem(self, Cause.Drop);
 
@@ -30,7 +30,7 @@ public class ItemHandler : AbstractHookHandler
     private void On_SceneExitController_Begin(On.RoR2.SceneExitController.orig_Begin orig,
         RoR2.SceneExitController self)
     {
-        if (NetworkServer.active && ModConfig.distributeOnTeleport.Value)
+        if (NetworkServer.active && ModConfig.timeOfDistribution.Value.Equals(Distribution.OnTeleport))
         {
             var originalPickups = RoR2.InstanceTracker.GetInstancesList<RoR2.GenericPickupController>();
 

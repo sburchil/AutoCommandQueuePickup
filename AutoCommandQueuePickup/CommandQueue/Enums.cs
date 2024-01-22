@@ -13,4 +13,10 @@ namespace AutoCommandQueuePickup
         Closest,
         LeastItems
     }
+
+    public enum Distribution
+    {
+        OnTeleport,
+        OnDrop
+    }
 }

@@ -34,14 +34,8 @@ public class ConfigMigrator
 
     private static Dictionary<ConfigDefinition, Action<Config, string>> migrations = new()
     {
-        {new("General", "TeleportCommandCubes"), (config, value) =>
-            config.teleportCommandOnDrop.Value = config.teleportCommandOnTeleport.Value = value == "true"
-        },
         {new("General", "DebugItemDefinitions"), (config, value) => { } },
-
-        {new("General", "DistributeOnDrop"), (config, value) => config.distributeOnDrop.Value = value == "true" },
-        {new("General", "DistributeOnTeleport"), (config, value) => config.distributeOnTeleport.Value = value == "true" },
-
+        {new("General", "TimeOfDistribution"), (config, value) => config.timeOfDistribution.Value = (Distribution)Enum.Parse(typeof(Distribution), value)},
         {new("OnDrop", "ItemDistributionMode"), (config, value) => config.distributionMode.Value = (Mode)Enum.Parse(typeof(Mode), value)},
         {new("OnDrop", "DistributeWhiteItems"), (config, value) => MigrateItemTier(config.OnDrop.TierWhitelist, ItemTier.Tier1, value)},
         {new("OnDrop", "DistributeGreenItems"), (config, value) => MigrateItemTier(config.OnDrop.TierWhitelist, ItemTier.Tier2, value)},

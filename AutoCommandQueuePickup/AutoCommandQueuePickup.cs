@@ -99,7 +99,6 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         //AutoPickupItem config
         PlayerCharacterMasterController.onPlayerAdded += UpdateTargetsWrapper;
         PlayerCharacterMasterController.onPlayerRemoved += UpdateTargetsWrapper;
-        config.distributeToDeadPlayers.SettingChanged += (_, _) => UpdateTargets();
         config.distributionMode.SettingChanged += (_, _) =>
         Distributor = ItemDistributor.GetItemDistributor(config.distributionMode.Value, this);
 
