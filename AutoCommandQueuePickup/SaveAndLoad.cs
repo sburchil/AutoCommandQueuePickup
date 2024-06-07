@@ -15,7 +15,7 @@ namespace AutoCommandQueuePickup
             string content = File.ReadAllText(path).Trim();
             if (string.IsNullOrEmpty(content)) return;
 
-            QueueManager.mainQueues.Clear();
+            QueueManager.UpdateQueueAvailability();
             try
             {
                 using (StreamReader sr = new(path))
