@@ -33,23 +33,11 @@
       <Reference Include="com.unity.multiplayer-hlapi.Runtime">
         <HintPath>Libs\com.unity.multiplayer-hlapi.Runtime.dll</HintPath>
       </Reference>
-      <Reference Include="Facepunch.Steamworks">
-        <HintPath>Libs\Facepunch.Steamworks.dll</HintPath>
-      </Reference>
       <Reference Include="HGCSharpUtils">
         <HintPath>Libs\HGCSharpUtils.dll</HintPath>
       </Reference>
       <Reference Include="MMHOOK_RoR2">
         <HintPath>Libs\MMHOOK_RoR2.dll</HintPath>
-      </Reference>
-      <Reference Include="Mono.Cecil">
-        <HintPath>Libs\Mono.Cecil.dll</HintPath>
-      </Reference>
-      <Reference Include="MonoMod.RuntimeDetour">
-        <HintPath>Libs\MonoMod.RuntimeDetour.dll</HintPath>
-      </Reference>
-      <Reference Include="MonoMod.Utils">
-        <HintPath>Libs\MonoMod.Utils.dll</HintPath>
       </Reference>
       <Reference Include="ProperSave">
         <HintPath>Libs\ProperSave.dll</HintPath>
@@ -59,33 +47,6 @@
       </Reference>
       <Reference Include="RiskOfOptions">
         <HintPath>Libs\RiskOfOptions.dll</HintPath>
-      </Reference>
-      <Reference Include="RoR2">
-        <HintPath>Libs\RoR2.dll</HintPath>
-      </Reference>
-      <Reference Include="Unity.TextMeshPro">
-        <HintPath>Libs\Unity.TextMeshPro.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine">
-        <HintPath>Libs\UnityEngine.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine.CoreModule">
-        <HintPath>Libs\UnityEngine.CoreModule.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine.ImageConversionModule">
-        <HintPath>Libs\UnityEngine.ImageConversionModule.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine.PhysicsModule">
-        <HintPath>Libs\UnityEngine.PhysicsModule.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine.TextRenderingModule">
-        <HintPath>Libs\UnityEngine.TextRenderingModule.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine.UI">
-        <HintPath>Libs\UnityEngine.UI.dll</HintPath>
-      </Reference>
-      <Reference Include="UnityEngine.UIModule">
-        <HintPath>Libs\UnityEngine.UIModule.dll</HintPath>
       </Reference>
     </ItemGroup>
 </Project>
