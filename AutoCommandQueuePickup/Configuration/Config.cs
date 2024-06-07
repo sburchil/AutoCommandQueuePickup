@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using AutoCommandQueuePickup;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using RiskOfOptions;
@@ -290,7 +291,7 @@ public class Config
             ItemTier[] tiers = (ItemTier[])Enum.GetValues(typeof(ItemTier));
             foreach (ItemTier tier in tiers)
             {
-                if(!QueueManager.PeekForItemTier(tier)) continue;
+                if(QueueManager.Peek(tier) == null) continue;
                 textToSave += tier.ToString() + "," + QueueManager.DoesRepeat(tier).ToString() + ",";
                 foreach (QueueManager.QueueEntry entry in QueueManager.mainQueues[tier])
                 {
@@ -318,7 +319,7 @@ public class Config
         string content = File.ReadAllText(path).Trim();
         if (string.IsNullOrEmpty(content)) return;
 
-        QueueManager.ClearAllQueues();
+        QueueManager.mainQueues.Clear();
         try
         {
             using(StreamReader sr = new (path)){
@@ -328,7 +329,7 @@ public class Config
                     string[] rawLinesSplit = line.Split(',');
                     ItemTier currTier = (ItemTier)Enum.Parse(typeof(ItemTier), rawLinesSplit[0]);
                     bool doesRepeat = Convert.ToBoolean(rawLinesSplit[1]);
-                    QueueManager.SetRepeat(currTier, doesRepeat);
+                    QueueManager.ToggleRepeat(currTier);
                     for (int i = 2; i < rawLinesSplit.Length; i++)
                     {
                         if(string.IsNullOrEmpty(rawLinesSplit[i])) continue;

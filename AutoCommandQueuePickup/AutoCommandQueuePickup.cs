@@ -14,7 +14,6 @@ using Path = System.IO.Path;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
-using BepInEx.Configuration;
 
 [assembly: AssemblyVersion(AutoCommandQueuePickup.AutoCommandQueuePickup.PluginVersion)]
 namespace AutoCommandQueuePickup;
@@ -30,7 +29,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public const string PluginAuthor = "symmys";
     public const string PluginName = "AutoCommandQueuePickup";
     public const string PluginGUID = PluginAuthor + "." + PluginName;
-    public const string PluginVersion = "1.0.3";
+    public const string PluginVersion = "1.0.4";
     private static readonly MethodInfo GenericPickupController_AttemptGrant =
         typeof(GenericPickupController).GetMethod("AttemptGrant",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -49,7 +48,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     private HookManager hookManager;
     public readonly string LastCommandQueuePath = Path.Combine(Application.persistentDataPath, "ProperSave", "Saves") + "\\" + "LastCommandQueue" + ".csv";
     private static GameObject commandUIPrefab;
-    public static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
+    public static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.Public);
     private static readonly FieldInfo PickupPickerController_options = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private void Awake(){
@@ -200,9 +199,9 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     {
         var cursor = new ILCursor(il);
 
-        cursor.GotoNext(MoveType.After, i => i.MatchCall<GenericPickupController>("CreatePickup"));
-        cursor.Emit(OpCodes.Dup);
+        cursor.GotoNext(MoveType.After, i => i.MatchCall<PickupDropletController>("CreatePickup"));
         cursor.Emit(OpCodes.Ldarg_0);
+        cursor.Emit(OpCodes.Dup);
         cursor.EmitDelegate<Action<GenericPickupController, PickupDropletController>>(
             (pickupController, self) =>
             {

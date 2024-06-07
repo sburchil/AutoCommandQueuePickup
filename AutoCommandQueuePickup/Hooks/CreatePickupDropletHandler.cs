@@ -15,13 +15,13 @@ public class CreatePickupDropletHandler : AbstractHookHandler
 
     public override void RegisterHooks()
     {
-        IL.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 +=
+        IL.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3 +=
             IL_PickupDropletController_CreatePickupDroplet;
     }
 
     public override void UnregisterHooks()
     {
-        IL.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -=
+        IL.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3 -=
             IL_PickupDropletController_CreatePickupDroplet;
     }
 
