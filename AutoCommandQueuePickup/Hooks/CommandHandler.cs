@@ -28,7 +28,7 @@ public class CommandHandler : AbstractHookHandler
         }
         ItemTier itemTier = PickupCatalog.GetPickupDef(pickupInfo.pickupIndex).itemTier;
         IEnumerable<(ItemTier, PickupIndex)> itemQueue = QueueManager.PeekAll();
-        if (!itemQueue.Any() || QueueManager.Peek(itemTier) == null)
+        if (!itemQueue.Any() || QueueManager.mainQueues[itemTier].Count <= 0)
         {
             AutoCommandQueuePickup.dontDestroy = true;
             if (AutoCommandQueuePickup.config.ShouldDistributeCommand(pickupInfo.pickupIndex, Cause.Drop))
