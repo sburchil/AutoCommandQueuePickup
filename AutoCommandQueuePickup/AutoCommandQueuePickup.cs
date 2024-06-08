@@ -90,7 +90,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
             UpdateTargets();
         };
         
-        IL.RoR2.PickupDropletController.OnCollisionEnter += ModifyDropletCollision;
+        IL.RoR2.PickupDropletController.CreatePickup += ModifyCreatePickup;
 
         On.RoR2.PlayerCharacterMasterController.Awake += OnPlayerAwake;
         //end init AutoPickupItem config
@@ -195,13 +195,13 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         if (master) master.onBodyStart += obj => UpdateTargets();
     }
 
-    private void ModifyDropletCollision(ILContext il)
+    private void ModifyCreatePickup(ILContext il)
     {
         var cursor = new ILCursor(il);
 
-        cursor.GotoNext(MoveType.After, i => i.MatchCall<PickupDropletController>("CreatePickup"));
-        cursor.Emit(OpCodes.Ldarg_0);
+        cursor.GotoNext(MoveType.After, i => i.MatchCall<GenericPickupController>("CreatePickup"));
         cursor.Emit(OpCodes.Dup);
+        cursor.Emit(OpCodes.Ldarg_0);
         cursor.EmitDelegate<Action<GenericPickupController, PickupDropletController>>(
             (pickupController, self) =>
             {
