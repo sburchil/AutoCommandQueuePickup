@@ -329,7 +329,7 @@ public class Config
                     string[] rawLinesSplit = line.Split(',');
                     ItemTier currTier = (ItemTier)Enum.Parse(typeof(ItemTier), rawLinesSplit[0]);
                     bool doesRepeat = Convert.ToBoolean(rawLinesSplit[1]);
-                    QueueManager.ToggleRepeat(currTier);
+                    if (doesRepeat) QueueManager.ToggleRepeat(currTier);
                     for (int i = 2; i < rawLinesSplit.Length; i++)
                     {
                         if(string.IsNullOrEmpty(rawLinesSplit[i])) continue;
