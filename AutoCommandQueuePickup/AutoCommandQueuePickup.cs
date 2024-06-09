@@ -26,7 +26,7 @@ namespace AutoCommandQueuePickup;
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
 public class AutoCommandQueuePickup : BaseUnityPlugin
 {
-    public const string PluginAuthor = "symmys, Hero-X";
+    public const string PluginAuthor = "symmys";
     public const string PluginName = "AutoCommandQueuePickup";
     public const string PluginGUID = PluginAuthor + "." + PluginName;
     public const string PluginVersion = "1.1.1";
