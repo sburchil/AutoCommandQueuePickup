@@ -29,7 +29,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public const string PluginAuthor = "symmys";
     public const string PluginName = "AutoCommandQueuePickup";
     public const string PluginGUID = PluginAuthor + "." + PluginName;
-    public const string PluginVersion = "1.0.4";
+    public const string PluginVersion = "1.1.1";
     private static readonly MethodInfo GenericPickupController_AttemptGrant =
         typeof(GenericPickupController).GetMethod("AttemptGrant",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
