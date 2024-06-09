@@ -1,3 +1,4 @@
+using AutoCommandQueuePickup;
 using R2API.Utils;
 using RoR2;
 using System.Collections.Generic;
@@ -12,24 +13,22 @@ public class CommandHandler : AbstractHookHandler
 {
     public override void RegisterHooks()
     {
-        On.RoR2.Artifacts.CommandArtifactManager.OnDropletHitGroundServer +=
-    On_CommandArtifactManager_OnDropletHitGroundServer;
+        On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3 +=
+    On_PickupDropletController_CreatePickupDroplet;
         TeleporterInteraction.onTeleporterChargedGlobal += OnTeleporterCharged;
     }
-    public static void On_CommandArtifactManager_OnDropletHitGroundServer(On.RoR2.Artifacts.CommandArtifactManager.orig_OnDropletHitGroundServer orig, 
-        ref GenericPickupController.CreatePickupInfo pickupInfo, ref bool shouldSpawn)
+    public static void On_PickupDropletController_CreatePickupDroplet(On.RoR2.PickupDropletController.orig_CreatePickupDroplet_CreatePickupInfo_Vector3 orig, GenericPickupController.CreatePickupInfo pickupInfo, Vector3 velocity)
     {
         PickupIndex pickupIndex = pickupInfo.pickupIndex;
         PickupDef pickupDef = PickupCatalog.GetPickupDef(pickupIndex);
         if (pickupDef == null || pickupDef.itemIndex == ItemIndex.None && pickupDef.equipmentIndex == EquipmentIndex.None && pickupDef.itemTier == ItemTier.NoTier)
         {
-            orig(ref pickupInfo, ref shouldSpawn);
+            orig(pickupInfo, velocity);
             return;
         }
-        shouldSpawn = false;
         ItemTier itemTier = PickupCatalog.GetPickupDef(pickupInfo.pickupIndex).itemTier;
         IEnumerable<(ItemTier, PickupIndex)> itemQueue = QueueManager.PeekAll();
-        if (!itemQueue.Any() || !QueueManager.PeekForItemTier(itemTier))
+        if (!itemQueue.Any() || QueueManager.mainQueues[itemTier].Count <= 0)
         {
             AutoCommandQueuePickup.dontDestroy = true;
             if (AutoCommandQueuePickup.config.ShouldDistributeCommand(pickupInfo.pickupIndex, Cause.Drop))
@@ -42,7 +41,7 @@ public class CommandHandler : AbstractHookHandler
             {
                 pickupInfo.position = GetTeleporterCommandTargetPosition();
             }
-            orig(ref pickupInfo, ref shouldSpawn);
+            orig(pickupInfo, velocity);
         }
         else
         {
@@ -55,7 +54,7 @@ public class CommandHandler : AbstractHookHandler
             AutoCommandQueuePickup.GrantCommandItem(poppedIndex, master);
             GameObject.Destroy(gameObject);
             pickupInfo = new GenericPickupController.CreatePickupInfo();
-            orig(ref pickupInfo, ref shouldSpawn);
+            orig(pickupInfo, velocity);
         }
     }
 
@@ -63,8 +62,8 @@ public class CommandHandler : AbstractHookHandler
     {
         // IL.RoR2.Artifacts.CommandArtifactManager.OnDropletHitGroundServer -=
         //     IL_CommandArtifactManager_OnDropletHitGroundServer;
-        On.RoR2.Artifacts.CommandArtifactManager.OnDropletHitGroundServer -=
-            On_CommandArtifactManager_OnDropletHitGroundServer;
+        On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3 -=
+    On_PickupDropletController_CreatePickupDroplet;
     }
 
     private static Vector3 GetTargetLocation()

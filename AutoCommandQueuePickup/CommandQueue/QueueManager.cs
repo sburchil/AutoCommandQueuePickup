@@ -1,7 +1,7 @@
-﻿using RoR2;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using RoR2;
 
 namespace AutoCommandQueuePickup
 {
@@ -42,18 +42,23 @@ namespace AutoCommandQueuePickup
         }
 
         public static void UpdateQueueAvailability()
-        {        
-            mainQueues.Clear();    
-            object[] tiers = AutoCommandQueuePickup.config.enabledTabsConfig.Where(a => a.Value).Select(a => Enum.Parse(typeof(ItemTier), a.Definition.Key)).ToArray();
-            foreach (ItemTier tier in tiers.Select(v => (ItemTier)v))
+        {
+            object[] enabledTabs = AutoCommandQueuePickup.config.enabledTabsConfig.Where(a => a.Value).Select(a => Enum.Parse(typeof(ItemTier), a.Definition.Key)).ToArray();
+            foreach (var key in mainQueues.Keys.ToArray())
+            {
+                if (!enabledTabs.Contains(key))
+                    mainQueues.Remove(key);
+            }
+            foreach (ItemTier tier in enabledTabs)
             {
                 if (!mainQueues.ContainsKey(tier))
-                    mainQueues.Add(tier, new ());
+                    mainQueues.Add(tier, new List<QueueEntry>());
             }
         }
 
         private static void InitQueues(Run run)
         {
+            mainQueues.Clear();
             UpdateQueueAvailability();
 
             OnRunQueueInit?.Invoke(run);
@@ -190,7 +195,6 @@ namespace AutoCommandQueuePickup
             TryMerge(tier, newIndex - 1, newIndex);
             TryMerge(tier, newIndex, newIndex + 1);
 
-
             // Do a full update instead of up to 6 smaller updates.
             OnQueueChanged?.Invoke(QueueChange.Moved, tier, -1);
         }
@@ -199,20 +203,6 @@ namespace AutoCommandQueuePickup
         {
             return mainQueues.Where(entry => entry.Value.Count > 0)
                 .Select(entry => (entry.Key, entry.Value.First().pickupIndex));
-        }
-        public static void ClearAllQueues() {
-            UpdateQueueAvailability();
-        }
-
-        public static bool PeekForItemTier(ItemTier tier)
-        {
-            if (mainQueues.ContainsKey(tier)) return mainQueues[tier].Count > 0;
-            return false;
-        }
-
-        public static void SetRepeat(ItemTier tier, bool value)
-        {
-            if(!queueRepeat.ContainsKey(tier)) queueRepeat.Add(tier, value);
         }
     }
 }

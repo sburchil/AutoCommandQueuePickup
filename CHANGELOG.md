@@ -7,3 +7,5 @@
 ### 1.0.3 - fixed NullPointer exception when starting a new run
 
 ### 1.1.0 - added extra configs and fixed AutoItemPickup notworking outside of Command runs
+
+### 1.1.1 - updated to 1.10 version of the game

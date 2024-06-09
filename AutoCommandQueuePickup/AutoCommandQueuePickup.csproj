@@ -4,7 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>default</LangVersion>
         <Version>1.0.0</Version>
-        <Authors>symmys</Authors>
+        <Authors>symmys, Hero-X</Authors>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 	
@@ -22,22 +22,31 @@
       <PackageReference Include="MonoMod" Version="22.7.31.1" />
       <PackageReference Include="R2API" Version="5.0.5" />
       <PackageReference Include="ThunderLib.RoR2" Version="0.0.1" />
-      <PackageReference Include="BepInEx.Core" Version="5.4.19" />
-      <PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.4-r.0" />
+      <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+	  <PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.4.4-r.1" />
     </ItemGroup>
-
+	
     <ItemGroup>
-        <Reference Include="ProperSave">
-            <HintPath>
-              ..\Libs\ProperSave.dll
-            </HintPath>
-            <Private>false</Private>
-        </Reference>
-        <Reference Include="RiskOfOptions">
-          <HintPath>
-            ..\Libs\RiskOfOptions.dll
-          </HintPath>
-          <Private>false</Private>
+      <Reference Include="BepInEx">
+        <HintPath>Libs\BepInEx.dll</HintPath>
+      </Reference>
+      <Reference Include="com.unity.multiplayer-hlapi.Runtime">
+        <HintPath>Libs\com.unity.multiplayer-hlapi.Runtime.dll</HintPath>
+      </Reference>
+      <Reference Include="HGCSharpUtils">
+        <HintPath>Libs\HGCSharpUtils.dll</HintPath>
+      </Reference>
+      <Reference Include="MMHOOK_RoR2">
+        <HintPath>Libs\MMHOOK_RoR2.dll</HintPath>
+      </Reference>
+      <Reference Include="ProperSave">
+        <HintPath>Libs\ProperSave.dll</HintPath>
+      </Reference>
+      <Reference Include="R2API">
+        <HintPath>Libs\R2API.dll</HintPath>
+      </Reference>
+      <Reference Include="RiskOfOptions">
+        <HintPath>Libs\RiskOfOptions.dll</HintPath>
       </Reference>
     </ItemGroup>
 </Project>

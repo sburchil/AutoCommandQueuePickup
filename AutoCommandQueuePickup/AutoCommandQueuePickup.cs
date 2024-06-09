@@ -14,7 +14,6 @@ using Path = System.IO.Path;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
-using BepInEx.Configuration;
 
 [assembly: AssemblyVersion(AutoCommandQueuePickup.AutoCommandQueuePickup.PluginVersion)]
 namespace AutoCommandQueuePickup;
@@ -30,7 +29,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     public const string PluginAuthor = "symmys";
     public const string PluginName = "AutoCommandQueuePickup";
     public const string PluginGUID = PluginAuthor + "." + PluginName;
-    public const string PluginVersion = "1.0.3";
+    public const string PluginVersion = "1.1.1";
     private static readonly MethodInfo GenericPickupController_AttemptGrant =
         typeof(GenericPickupController).GetMethod("AttemptGrant",
             BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
@@ -49,7 +48,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
     private HookManager hookManager;
     public readonly string LastCommandQueuePath = Path.Combine(Application.persistentDataPath, "ProperSave", "Saves") + "\\" + "LastCommandQueue" + ".csv";
     private static GameObject commandUIPrefab;
-    public static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.NonPublic);
+    public static readonly FieldInfo commandCubePrefabField = typeof(RoR2.Artifacts.CommandArtifactManager).GetField("commandCubePrefab", BindingFlags.Static | BindingFlags.Public);
     private static readonly FieldInfo PickupPickerController_options = typeof(PickupPickerController).GetField("options", BindingFlags.Instance | BindingFlags.NonPublic);
 
     private void Awake(){
@@ -91,7 +90,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
             UpdateTargets();
         };
         
-        IL.RoR2.PickupDropletController.OnCollisionEnter += ModifyDropletCollision;
+        IL.RoR2.PickupDropletController.CreatePickup += ModifyCreatePickup;
 
         On.RoR2.PlayerCharacterMasterController.Awake += OnPlayerAwake;
         //end init AutoPickupItem config
@@ -196,7 +195,7 @@ public class AutoCommandQueuePickup : BaseUnityPlugin
         if (master) master.onBodyStart += obj => UpdateTargets();
     }
 
-    private void ModifyDropletCollision(ILContext il)
+    private void ModifyCreatePickup(ILContext il)
     {
         var cursor = new ILCursor(il);
 

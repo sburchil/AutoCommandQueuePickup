@@ -1,21 +1,22 @@
-﻿﻿using RoR2;
-using RoR2.UI;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using AutoCommandQueuePickup;
+using RoR2;
+using RoR2.UI;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace AutoCommandQueuePickup
 {
     class QueueDisplay : MonoBehaviour
     {
-        public GameObject itemIconPrefab = null;
+        public GameObject itemIconPrefab;
         public float itemIconPrefabWidth = 64f;
         public ItemTier tier;
         private float iconScale = 1;
         private RectTransform rectTransform;
-        private List<ItemIcon> icons = new List<ItemIcon>();
+        private readonly List<ItemIcon> icons = new List<ItemIcon>();
         private List<QueueManager.QueueEntry> queue;
 
         public void Awake()
@@ -37,10 +38,7 @@ namespace AutoCommandQueuePickup
 
         public void LayoutIcons(int first = 0)
         {
-            for(int i = first; i < icons.Count; i++)
-            {
-                LayoutIcon(i, icons[i].rectTransform);
-            }
+            for(int i = first; i < icons.Count; i++) LayoutIcon(i, icons[i].rectTransform);
         }
 
         public ItemIcon AllocateIcon(int index)
@@ -62,7 +60,7 @@ namespace AutoCommandQueuePickup
             });
 
             button.navigation = new Navigation {
-                mode = Navigation.Mode.None,
+                mode = Navigation.Mode.None
             };
             transform.anchorMin = new Vector2(0, 1);
             transform.anchorMax = new Vector2(0, 1);
@@ -94,10 +92,7 @@ namespace AutoCommandQueuePickup
 
         public void DestroyUI()
         {
-            foreach(var icon in icons)
-            {
-                Destroy(icon.gameObject);
-            }
+            foreach(var icon in icons) Destroy(icon.gameObject);
             icons.Clear();
         }
 
@@ -116,10 +111,7 @@ namespace AutoCommandQueuePickup
 
         private void UpdateIcons()
         {
-            for(int i = 0; i < icons.Count; i++)
-            {
-                UpdateIcon(i);
-            }
+            for(int i = 0; i < icons.Count; i++) UpdateIcon(i);
         }
 
         private void HandleQueueChange(QueueManager.QueueChange change, ItemTier tier, int index)
@@ -248,9 +240,7 @@ namespace AutoCommandQueuePickup
             {
                 var rt = m_DraggingIcon.GetComponent<RectTransform>();
                 if (RectTransformUtility.ScreenPointToWorldPointInRectangle(m_Queue.rectTransform, data.position, data.pressEventCamera, out var globalMousePos))
-                {
                     rt.position = globalMousePos;
-                }
             }
 
             public void OnPointerClick(PointerEventData eventData)
